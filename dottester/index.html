@@ -25,13 +25,33 @@
 
         var frequency = 5120 * 1000 * 1000;
         var apPosList = [
-            {x: 100, y: 200},
-            {x: 200, y: 500},
-            {x: 1000, y: 600},
+            {x: 200, y: 250, powerdb: 20.0},
+            {x: 200, y: 500, powerdb: 20.0},
+            {x: 1000, y: 600, powerdb: 20.0},
+            {x: 575, y: 200, powerdb: 20.0},
+            {x: 1000, y: 175, powerdb: 20.0},
         ];
 
-        var obstaclesList =[
-            {start: [25, 318], end: [1275, 318], attenuation: 3, material: "wood"}
+        /*
+         * drywall: 3
+         * bookchelf: 2
+         * exteriorglass: 3
+         * wooddoor: 6
+         * marble: 6
+         * brick: 10
+         * concrete 12
+         * elevator shaft: 30
+        */
+        var obstaclesList = [
+            {start: {x: 24, y:318}, end: {x: 1275, y:318}, attenuation: 12, material: "wood"},
+            {start: {x: 24, y:446}, end: {x: 180, y:445}, attenuation: 12, material: "wood"},
+            {start: {x: 210, y:446}, end: {x: 516, y:445}, attenuation: 12, material: "wood"},
+            {start: {x: 607, y:38}, end: {x: 607, y:318}, attenuation: 3, material: "wood"},
+            {start: {x: 781, y:434}, end: {x: 781, y:811}, attenuation: 3, material: "wood"},
+            {start: {x: 900, y:38}, end: {x: 900, y:318}, attenuation: 3, material: "wood"},
+            {start: {x: 314, y:38}, end: {x: 314, y:315}, attenuation: 3, material: "wood"},
+            {start: {x: 516, y:445}, end: {x: 516, y:810}, attenuation: 3, material: "wood"},
+            {start: {x: 781, y:434}, end: {x: 1275, y:434}, attenuation: 3, material: "wood"},
         ];
 
         var selectedLengthPXOnImage = 1300;
@@ -62,22 +82,85 @@
             matrix[ybox][xbox] = dBPower;
             matrix[parseInt(apAtY/5)][parseInt(apAtX/5)] = dBPower;
 
+            //for (y = 0; y < matrix.length; y++) {
+            //    for (x = 0; x < matrix[y].length; x++) {
+            //        xPos = x * 5 + 5/2;
+            //        yPos = y * 5 + 5/2;
+            //        distM = Math.sqrt( Math.pow(Math.abs(xPos - xboxcenter) * px2meter, 2) + Math.pow(Math.abs(yPos - yboxcenter) * px2meter, 2))
+
+            //        dBPowerAtXY = dBPower - calcFreeSpaceLossdB(freqHz, distM)
+            //        //console.log(xPos, yPos, distM, dBPowerAtXY)
+            //        if (matrix[y][x] == null || matrix[y][x] < dBPowerAtXY) {
+            //            matrix[y][x] = dBPowerAtXY
+            //        }
+
+            //    }
+            //}
+
+            //iterativeUpdatedBPower(matrix, xbox, ybox, dBPower, px2meter, freqHz)
+        }
+
+        function calcRealPoint(xbox, ybox) {
+            xPos = x * 5 + 5 / 2;
+            yPos = y * 5 + 5 / 2;
+            return [xPos, yPos];
+        }
+
+        function calcDistance(x0, y0, x1, y1, px2meter) {
+            return Math.sqrt( Math.pow(Math.abs(x0 - x1) * px2meter, 2) + Math.pow(Math.abs(y0 - y1) * px2meter, 2));
+        }
+
+        function isLineCross(a, b, c, d) {
+            s = (a.x - b.x) * (c.y - a.y) - (a.y - b.y) * (c.x - a.x);
+            t = (a.x - b.x) * (d.y - a.y) - (a.y - b.y) * (d.x - a.x);
+            if (s * t > 0) {
+                return false;
+            }
+
+            s = (c.x - d.x) * (a.y - c.y) - (c.y - d.y) * (a.x - c.x);
+            t = (c.x - d.x) * (b.y - c.y) - (c.y - d.y) * (b.x - c.x);
+            if (s * t > 0) {
+                return false;
+            }
+            return true;
+        }
+
+        function calcObstaclesAttenuationdB(pos, apPos, obstaclesList) {
+            attdB = 0.0
+            for (let idx in obstaclesList) {
+                obstacle = obstaclesList[idx];
+                if (isLineCross(pos, apPos, obstacle.start, obstacle.end)) {
+                    attdB += obstacle.attenuation
+                }
+            }
+            return attdB;
+        }
+
+        function updateMatrix(matrix, apPosList, obstaclesList, px2meter, frequency) {
             for (y = 0; y < matrix.length; y++) {
                 for (x = 0; x < matrix[y].length; x++) {
-                    xPos = x * 5 + 5/2;
-                    yPos = y * 5 + 5/2;
-                    distM = Math.sqrt( Math.pow(Math.abs(xPos - xboxcenter) * px2meter, 2) + Math.pow(Math.abs(yPos - yboxcenter) * px2meter, 2))
+                    curPos = calcRealPoint(x, y)
 
-                    dBPowerAtXY = dBPower - calcFreeSpaceLossdB(freqHz, distM)
-                    //console.log(xPos, yPos, distM, dBPowerAtXY)
-                    if (matrix[y][x] == null || matrix[y][x] < dBPowerAtXY) {
-                        matrix[y][x] = dBPowerAtXY
+                    for (ap_idx in apPosList) {
+                        apPos = [apPosList[ap_idx].x, apPosList[ap_idx].y]
+                        /* detect crossing obstacles */
+                        obstaclesAttenuationdB = calcObstaclesAttenuationdB(
+                            {x: curPos[0], y: curPos[1]},
+                            {x: apPos[0], y: apPos[1]},
+                            obstaclesList
+                        )
+
+                        distM = calcDistance(curPos[0], curPos[1], apPos[0], apPos[1], px2meter)
+
+                        dBPowerAtXY = apPosList[ap_idx].powerdb  - obstaclesAttenuationdB - calcFreeSpaceLossdB(frequency, distM);
+                        if (matrix[y][x] == null || matrix[y][x] < dBPowerAtXY) {
+                            //console.log(apPosList[idx].powerdb, dBPowerAtXY)
+                            matrix[y][x] = dBPowerAtXY
+                        }
                     }
 
                 }
             }
-
-            //iterativeUpdatedBPower(matrix, xbox, ybox, dBPower, px2meter, freqHz)
 
         }
 
@@ -142,10 +225,11 @@
             [-25, "red"],
             [-35, "orange"],
             [-45, "yellow"],
-            [-55, "lime"],
-            [-65, "green"],
-            [-75, "teal"],
-            [-80, "blue"],
+            [-50, "lime"],
+            [-55, "green"],
+            [-60, "teal"],
+            [-65, "navy"],
+            [-70, "blue"],
             [-85, "blue"],
             [-90, "navy"],
             [-96, "blue"],
@@ -199,8 +283,8 @@
                 start = obstacles[idx].start
                 end = obstacles[idx].end
                 ctx.beginPath();
-                ctx.moveTo(start[0], start[1]);
-                ctx.lineTo(end[0], end[1]);
+                ctx.moveTo(start.x, start.y);
+                ctx.lineTo(end.x, end.y);
                 ctx.strokeStyle = "purple"
                 ctx.lineWidth=10;
                 ctx.stroke();
@@ -226,6 +310,7 @@
             for (key in apPosList) {
                 updateMatrixWithAP(matrix, defaultAPdBPower, apPosList[key].x, apPosList[key].y, px2meter, frequency)
             }
+            updateMatrix(matrix, apPosList, obstaclesList, px2meter, frequency)
 
             drawMatrix(matrix)
             console.log("drawn", matrix);
