@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="jp">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+</head>
+
+<body>
+    <style type="text/css" media="screen">
+    </style>
+
+    <h1>Map</h1>
+    <canvas id="canvas-map" width="1324" height="840"></canvas>
+    <h1>Control</h1>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script type="text/javascript" charset="utf-8">
+        var canvas = document.getElementById("canvas-map");
+        _ctx = canvas.getContext("2d");
+        var backgroundImage = new Image();
+        backgroundImage.src = "map.png";
+
+        var frequency = 5120 * 1000 * 1000;
+        var apPosList = [
+            {x: 100, y: 200},
+            {x: 200, y: 500},
+            {x: 1000, y: 600},
+        ];
+
+        var obstaclesList =[
+            {start: [25, 318], end: [1275, 318], attenuation: 3, material: "wood"}
+        ];
+
+        var selectedLengthPXOnImage = 1300;
+        var selectedLengthMeter = 60;
+        var px2meter = selectedLengthMeter / selectedLengthPXOnImage; // [m/px]
+
+        var defaultAPdBPower = 17.0;
+
+        function initMatrix(xlim, ylim) {
+            var matrix = new Array(ylim);
+            for (y = 0; y < ylim; y++) {
+                matrix[y] = new Array(xlim);
+            }
+            for (y = 0; y < matrix.length; y++) {
+                for (x = 0; x < matrix[y].length; x++) {
+                    matrix[y][x] = null
+                }
+            }
+            return matrix
+        }
+
+        function updateMatrixWithAP(matrix, dBPower, apAtX, apAtY, px2meter, freqHz) {
+            /* calculate */
+            xbox = parseInt(apAtX/5)
+            ybox = parseInt(apAtY/5)
+            xboxcenter = xbox * 5 + 5/2
+            yboxcenter = ybox * 5 + 5/2
+            matrix[ybox][xbox] = dBPower;
+            matrix[parseInt(apAtY/5)][parseInt(apAtX/5)] = dBPower;
+
+            for (y = 0; y < matrix.length; y++) {
+                for (x = 0; x < matrix[y].length; x++) {
+                    xPos = x * 5 + 5/2;
+                    yPos = y * 5 + 5/2;
+                    distM = Math.sqrt( Math.pow(Math.abs(xPos - xboxcenter) * px2meter, 2) + Math.pow(Math.abs(yPos - yboxcenter) * px2meter, 2))
+
+                    dBPowerAtXY = dBPower - calcFreeSpaceLossdB(freqHz, distM)
+                    //console.log(xPos, yPos, distM, dBPowerAtXY)
+                    if (matrix[y][x] == null || matrix[y][x] < dBPowerAtXY) {
+                        matrix[y][x] = dBPowerAtXY
+                    }
+
+                }
+            }
+
+            //iterativeUpdatedBPower(matrix, xbox, ybox, dBPower, px2meter, freqHz)
+
+        }
+
+        function iterativeUpdatedBPower(matrix, xBox, yBox, dBPower, px2meter, freqHz) {
+            console.log("updateint adjaectt (%d, %d) power=%d (current=%d)", xBox, yBox, dBPower, matrix[yBox][xBox])
+            console.log(matrix[yBox][xBox], dBPower)
+            if (matrix[yBox][xBox] != null) {
+                if (matrix[yBox][xBox] > dBPower) {
+                    console.log("already highpower: OUT");
+                    return;
+                }
+            }
+
+            if (dBPower < dBPowerLimit) {
+                console.log("power level too low");
+                return;
+            }
+
+            matrix[yBox][xBox] = dBPower;
+
+            xyLength = 5 * px2meter
+            diagonalLength = 5 * Math.sqrt(2) * px2meter;
+            xydBPower = dBPower - calcFreeSpaceLossdB(freqHz, xyLength)
+            nondiagonaldBPower = dBPower - calcFreeSpaceLossdB(freqHz, diagonalLength)
+
+            for (dY = -1; dY < 2; dY++) {
+                for (dX = -1; dX < 2; dX++) {
+                    if (dX == 0 && dY == 0) {
+                        continue
+                    }
+                    console.log(dX, dY, xBox, yBox)
+                    if (Math.abs(dY) == Math.abs(dX)) {
+                        iterativeUpdatedBPower(matrix, xBox + dX, yBox + dY, nondiagonaldBPower, px2meter, freqHz)
+                    } else  {
+                        iterativeUpdatedBPower(matrix, xBox + dX, yBox + dY, xydBPower, px2meter, freqHz)
+                    }
+                }
+            }
+
+
+        }
+
+        function dbm2mw(dbm) {
+            return Math.pow(10, dbm / 10)
+        }
+
+        function mw2dbm(mw) {
+            return 10 * Math.log10(mw)
+        }
+
+        function calcFreeSpaceLossdB(freqHz, distM) {
+            speedOfLight = 299792458; // [m / s]
+            waveLength = speedOfLight / freqHz;
+            dB = 20 * Math.log10(4 * Math.PI * distM / waveLength)
+            //los = Math.pow((4 * Math.PI * distM) / waveLength, 2);
+            return dB
+        }
+
+        var dBPowerLimit = -96;
+        var dBPower2colors = [
+            [-15, "red"],
+            [-25, "red"],
+            [-35, "orange"],
+            [-45, "yellow"],
+            [-55, "lime"],
+            [-65, "green"],
+            [-75, "teal"],
+            [-80, "blue"],
+            [-85, "blue"],
+            [-90, "navy"],
+            [-96, "blue"],
+        ];
+
+        function calcColorForPower(dBPower) {
+            if (dBPower == null) {
+                return "none";
+            }
+            for (idx in dBPower2colors) {
+                if (dBPower2colors[idx][0] < dBPower) {
+                    return dBPower2colors[idx][1];
+                }
+            }
+
+            return "none"
+        }
+
+        function drawXYinColor(xbox, ybox, color) {
+            if (color == "none") {
+                return;
+            }
+            x_0 = xbox * 5
+            y_0 = ybox * 5
+
+            _ctx.fillStyle=color
+            _ctx.globalAlpha=0.5
+            _ctx.fillRect(x_0, y_0, 5, 5)
+            _ctx.globalAlpha=1.0
+        }
+
+        function drawMatrix(matrix) {
+            //for (y in matrix) {
+            for (y = 0; y < matrix.length; y++) {
+                //for (x in matrix[y]) {
+                for (x = 0; x < matrix[y].length; x++) {
+                    dBPower = matrix[y][x];
+                    color = calcColorForPower(dBPower)
+                    //console.log(x, y, color)
+                    drawXYinColor(x, y, color)
+
+                }
+            }
+
+        }
+
+        function drawObstacles(obstacles) {
+            var canvas = document.getElementById("canvas-map");
+            ctx = canvas.getContext("2d");
+            for (idx in obstacles) {
+                start = obstacles[idx].start
+                end = obstacles[idx].end
+                ctx.beginPath();
+                ctx.moveTo(start[0], start[1]);
+                ctx.lineTo(end[0], end[1]);
+                ctx.strokeStyle = "purple"
+                ctx.lineWidth=10;
+                ctx.stroke();
+            }
+
+        }
+
+
+        backgroundImage.onload=function() {
+            _ctx.drawImage(backgroundImage, 0, 0);
+
+            xLim = backgroundImage.width
+            yLim = backgroundImage.height
+
+            xLimBlock = parseInt(xLim / 5);
+            yLimBlock = parseInt(yLim / 5)
+            console.log(xLimBlock, yLimBlock);
+
+            matrix = initMatrix(xLimBlock, yLimBlock);
+            console.log("inited", matrix)
+
+            // fill ap
+            for (key in apPosList) {
+                updateMatrixWithAP(matrix, defaultAPdBPower, apPosList[key].x, apPosList[key].y, px2meter, frequency)
+            }
+
+            drawMatrix(matrix)
+            console.log("drawn", matrix);
+            drawObstacles(obstaclesList);
+        }
+
+        function mapClick(e) {
+            var mapOffset = $("#canvas-map").offset();
+            mouseX = parseInt(e.clientX - mapOffset.left);
+            mouseY = parseInt(e.clientY - mapOffset.top);
+            console.log("clicked = ", mouseX, mouseY)
+        }
+
+        $("#canvas-map").click(function(e) { mapClick(e);});
+    </script>
+</body>
+
+</html>
