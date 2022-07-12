@@ -12,9 +12,19 @@
     <style type="text/css" media="screen">
     </style>
 
-    <h1>Map</h1>
-    <canvas id="canvas-map" width="1324" height="840"></canvas>
-    <h1>Control</h1>
+    <div>
+        <h1>Map</h1>
+        <font color="red" id="map-status"></font>
+    </div>
+    <div>
+        <canvas id="canvas-map" width="1280" height="800"></canvas>
+    <div>
+        <button id="button-clear-ap" type="button" class="btn btn-danger">Clear AP</button>
+        <button id="button-add-ap" type="button" class="btn btn-primary toggle">Add AP</button>
+    </div>
+    <div>
+        <button id="button-download" type="button" class="btn btn-primary">Download Config</button>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2"

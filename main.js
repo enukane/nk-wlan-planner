@@ -1,5 +1,14 @@
-var canvas = document.getElementById("canvas-map");
-_ctx = canvas.getContext("2d");
+var __canvas = document.getElementById("canvas-map");
+__ctx = __canvas.getContext("2d");
+
+
+var MapStatus = {
+    NONE: 0,
+    ADD_AP: 1,
+}
+var __map_status = 0;
+
+
 var background_image = new Image();
 background_image.src = "map.png";
 
@@ -23,20 +32,23 @@ var appos_list = [
  * elevator shaft: 30
 */
 var obstacles_list = [
-    { start: { x: 24, y: 318 }, end: { x: 1275, y: 318 }, attenuation: 12, material: "wood" },
-    { start: { x: 24, y: 446 }, end: { x: 180, y: 445 }, attenuation: 12, material: "wood" },
-    { start: { x: 210, y: 446 }, end: { x: 516, y: 445 }, attenuation: 12, material: "wood" },
-    { start: { x: 607, y: 38 }, end: { x: 607, y: 318 }, attenuation: 3, material: "wood" },
-    { start: { x: 781, y: 434 }, end: { x: 781, y: 811 }, attenuation: 3, material: "wood" },
-    { start: { x: 900, y: 38 }, end: { x: 900, y: 318 }, attenuation: 3, material: "wood" },
-    { start: { x: 314, y: 38 }, end: { x: 314, y: 315 }, attenuation: 3, material: "wood" },
-    { start: { x: 516, y: 445 }, end: { x: 516, y: 810 }, attenuation: 3, material: "wood" },
-    { start: { x: 781, y: 434 }, end: { x: 1275, y: 434 }, attenuation: 3, material: "wood" },
+    { start: { x: 23, y: 292 }, end: { x: 1216, y: 292 }, attenuation: 12, material: "wood" },
+    { start: { x: 23, y: 412 }, end: { x: 180, y: 412 }, attenuation: 12, material: "wood" },
+    { start: { x: 210, y: 412 }, end: { x: 494, y: 412 }, attenuation: 12, material: "wood" },
+
+    { start: { x: 301, y: 35 }, end: { x: 301, y: 292 }, attenuation: 3, material: "wood" },
+    { start: { x: 581, y: 35 }, end: { x: 581, y: 292 }, attenuation: 3, material: "wood" },
+    { start: { x: 859, y: 35 }, end: { x: 859, y: 292 }, attenuation: 3, material: "wood" },
+
+    { start: { x: 494, y: 412 }, end: { x: 494, y: 749}, attenuation: 3, material: "wood" },
+
+    { start: { x: 750, y: 400 }, end: { x: 750, y: 749 }, attenuation: 3, material: "wood" },
+    { start: { x: 750, y: 400 }, end: { x: 1215, y: 400 }, attenuation: 3, material: "wood" },
 ];
 
 var selected_length_px_on_image = 1300;
 var selected_length_meter = 60;
-var px2meter = selected_length_meter / selected_length_px_on_image; // [m/px]
+var __px2meter = selected_length_meter / selected_length_px_on_image; // [m/px]
 
 var default_ap_powerdb = 17.0;
 
@@ -239,10 +251,10 @@ function draw_xybox_in_color(xbox, ybox, color) {
     x_0 = xbox * 5
     y_0 = ybox * 5
 
-    _ctx.fillStyle = color
-    _ctx.globalAlpha = 0.5
-    _ctx.fillRect(x_0, y_0, 5, 5)
-    _ctx.globalAlpha = 1.0
+    __ctx.fillStyle = color
+    __ctx.globalAlpha = 0.5
+    __ctx.fillRect(x_0, y_0, 5, 5)
+    __ctx.globalAlpha = 1.0
 }
 
 function draw_matrix(matrix) {
@@ -273,12 +285,28 @@ function draw_obstacles(obstacles) {
         ctx.lineWidth = 10;
         ctx.stroke();
     }
-
 }
 
+function redraw_map() {
+    var canvas = document.getElementById("canvas-map");
 
-background_image.onload = function () {
-    _ctx.drawImage(background_image, 0, 0);
+    __ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+    img_x_max = background_image.width
+    img_y_max = background_image.height
+    canvas_x_max = canvas.width
+    canvas_y_max = canvas.height
+    rate_x = canvas_x_max / img_x_max
+    rate_y = canvas_y_max / img_y_max
+    rate = 1.0
+    if (rate_x > rate_y) {
+        rate = rate_x
+    } else {
+        rate = rate_y
+    }
+    __ctx.drawImage(background_image,
+        0, 0, background_image.width, background_image.height,
+        0, 0, canvas_x_max * rate, canvas_y_max * rate);
 
     xLim = background_image.width
     yLim = background_image.height
@@ -288,24 +316,98 @@ background_image.onload = function () {
     console.log(xbox_max, ybo_max);
 
     matrix = init_matrix(xbox_max, ybo_max);
-    console.log("inited", matrix)
+    //console.log("inited", matrix)
 
     // fill ap
     for (key in appos_list) {
-        update_matrix_with_ap(matrix, default_ap_powerdb, appos_list[key].x, appos_list[key].y, px2meter, frequency)
+        update_matrix_with_ap(matrix, default_ap_powerdb, appos_list[key].x, appos_list[key].y, __px2meter, frequency)
     }
-    update_matrix(matrix, appos_list, obstacles_list, px2meter, frequency)
+    update_matrix(matrix, appos_list, obstacles_list, __px2meter, frequency)
 
     draw_matrix(matrix)
-    console.log("drawn", matrix);
+    //console.log("drawn", matrix);
     draw_obstacles(obstacles_list);
+
 }
 
-function mapClick(e) {
-    var mapOffset = $("#canvas-map").offset();
+background_image.onload = function () {
+    redraw_map()
+    return
+}
+
+function update_status(text) {
+    $("#map-status").text(text)
+}
+
+/* event handler */
+function map_click_to_add_ap(x, y) {
+    let new_ap = {
+        x: x, 
+        y: y,
+        powerdb: 20.0, /* XXX */
+    }
+    console.log("add_ap: ", new_ap)
+    appos_list.push(new_ap)
+
+    __map_status = MapStatus.NONE;
+    update_status("AP added")
+
+    redraw_map()
+}
+
+function map_click(e) {
+    var mapOffset = document.querySelector("canvas").getBoundingClientRect();//$("#canvas-map").getBoundingClientRect();
     mouseX = parseInt(e.clientX - mapOffset.left);
     mouseY = parseInt(e.clientY - mapOffset.top);
-    console.log("clicked = ", mouseX, mouseY)
+    console.log("clicked = ", mouseX, mouseY);
+
+    switch (__map_status) {
+        case MapStatus.NONE:
+            /* do nothing */
+            break;
+        case MapStatus.ADD_AP:
+            map_click_to_add_ap(mouseX, mouseY)
+            break;
+        default:
+            break;
+    }
 }
 
-$("#canvas-map").click(function (e) { mapClick(e); });
+function clear_ap(e) {
+    update_status("cleared all AP")
+
+    appos_list = []
+    redraw_map()
+}
+
+function add_ap(e) {
+    update_status("click on map to add AP, press button to stop")
+    __map_status = MapStatus.ADD_AP
+}
+
+function download_clicked() {
+    let config_obj = {
+        ap: appos_list,
+        obstacles: obstacles_list,
+    }
+    let config_s = JSON.stringify(config_obj)
+    let blob = new Blob([config_s], {type: 'application/json'})
+    let url = URL.createObjectURL(blob)
+
+    let anchor = document.createElement('a')
+    anchor.setAttribute('href', url)
+    anchor.setAttribute('download', "config.json")
+
+    let mouse_event = new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+        view: window,
+    })
+
+    anchor.dispatchEvent(mouse_event)
+}
+
+$("#canvas-map").click(function (e) { map_click(e); })
+$("#button-clear-ap").click(function(e) { clear_ap(e); })
+$("#button-add-ap").click(function(e) { add_ap(e); })
+$("#button-download").click(function (e) { download_clicked(e); })
