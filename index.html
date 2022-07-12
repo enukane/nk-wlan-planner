@@ -20,11 +20,11 @@
     <script type="text/javascript" charset="utf-8">
         var canvas = document.getElementById("canvas-map");
         _ctx = canvas.getContext("2d");
-        var backgroundImage = new Image();
-        backgroundImage.src = "map.png";
+        var background_image = new Image();
+        background_image.src = "map.png";
 
         var frequency = 5120 * 1000 * 1000;
-        var apPosList = [
+        var appos_list = [
             {x: 200, y: 250, powerdb: 20.0},
             {x: 200, y: 500, powerdb: 20.0},
             {x: 1000, y: 600, powerdb: 20.0},
@@ -42,7 +42,7 @@
          * concrete 12
          * elevator shaft: 30
         */
-        var obstaclesList = [
+        var obstacles_list = [
             {start: {x: 24, y:318}, end: {x: 1275, y:318}, attenuation: 12, material: "wood"},
             {start: {x: 24, y:446}, end: {x: 180, y:445}, attenuation: 12, material: "wood"},
             {start: {x: 210, y:446}, end: {x: 516, y:445}, attenuation: 12, material: "wood"},
@@ -54,13 +54,13 @@
             {start: {x: 781, y:434}, end: {x: 1275, y:434}, attenuation: 3, material: "wood"},
         ];
 
-        var selectedLengthPXOnImage = 1300;
-        var selectedLengthMeter = 60;
-        var px2meter = selectedLengthMeter / selectedLengthPXOnImage; // [m/px]
+        var selected_length_px_on_image = 1300;
+        var selected_length_meter = 60;
+        var px2meter = selected_length_meter / selected_length_px_on_image; // [m/px]
 
-        var defaultAPdBPower = 17.0;
+        var default_ap_powerdb = 17.0;
 
-        function initMatrix(xlim, ylim) {
+        function init_matrix(xlim, ylim) {
             var matrix = new Array(ylim);
             for (y = 0; y < ylim; y++) {
                 matrix[y] = new Array(xlim);
@@ -73,14 +73,14 @@
             return matrix
         }
 
-        function updateMatrixWithAP(matrix, dBPower, apAtX, apAtY, px2meter, freqHz) {
+        function update_matrix_with_ap(matrix, powerdb, ap_x, ap_y, px2meter, freq_hz) {
             /* calculate */
-            xbox = parseInt(apAtX/5)
-            ybox = parseInt(apAtY/5)
+            xbox = parseInt(ap_x/5)
+            ybox = parseInt(ap_y/5)
             xboxcenter = xbox * 5 + 5/2
             yboxcenter = ybox * 5 + 5/2
-            matrix[ybox][xbox] = dBPower;
-            matrix[parseInt(apAtY/5)][parseInt(apAtX/5)] = dBPower;
+            matrix[ybox][xbox] = powerdb
+            //matrix[parseInt(apAtY/5)][parseInt(apAtX/5)] = powerdb
 
             //for (y = 0; y < matrix.length; y++) {
             //    for (x = 0; x < matrix[y].length; x++) {
@@ -100,17 +100,17 @@
             //iterativeUpdatedBPower(matrix, xbox, ybox, dBPower, px2meter, freqHz)
         }
 
-        function calcRealPoint(xbox, ybox) {
+        function calc_real_point(xbox, ybox) {
             xPos = x * 5 + 5 / 2;
             yPos = y * 5 + 5 / 2;
             return [xPos, yPos];
         }
 
-        function calcDistance(x0, y0, x1, y1, px2meter) {
+        function calc_distance_m(x0, y0, x1, y1, px2meter) {
             return Math.sqrt( Math.pow(Math.abs(x0 - x1) * px2meter, 2) + Math.pow(Math.abs(y0 - y1) * px2meter, 2));
         }
 
-        function isLineCross(a, b, c, d) {
+        function is_line_crossing(a, b, c, d) {
             s = (a.x - b.x) * (c.y - a.y) - (a.y - b.y) * (c.x - a.x);
             t = (a.x - b.x) * (d.y - a.y) - (a.y - b.y) * (d.x - a.x);
             if (s * t > 0) {
@@ -125,37 +125,41 @@
             return true;
         }
 
-        function calcObstaclesAttenuationdB(pos, apPos, obstaclesList) {
+        function calc_obstacles_attenuation_db(pos, apPos, obstacles) {
             attdB = 0.0
-            for (let idx in obstaclesList) {
-                obstacle = obstaclesList[idx];
-                if (isLineCross(pos, apPos, obstacle.start, obstacle.end)) {
+            for (let idx in obstacles) {
+                obstacle = obstacles[idx];
+                if (is_line_crossing(pos, apPos, obstacle.start, obstacle.end)) {
                     attdB += obstacle.attenuation
                 }
             }
             return attdB;
         }
 
-        function updateMatrix(matrix, apPosList, obstaclesList, px2meter, frequency) {
+        function ary2coordinate(pos) {
+            return {x: pos[0], y: pos[1]}
+        }
+
+        function update_matrix(matrix, appos_list, obstacles, px2meter, frequency) {
             for (y = 0; y < matrix.length; y++) {
                 for (x = 0; x < matrix[y].length; x++) {
-                    curPos = calcRealPoint(x, y)
+                    cur_pos = calc_real_point(x, y)
 
-                    for (ap_idx in apPosList) {
-                        apPos = [apPosList[ap_idx].x, apPosList[ap_idx].y]
+                    for (ap_idx in appos_list) {
+                        ap_pos = [appos_list[ap_idx].x, appos_list[ap_idx].y]
                         /* detect crossing obstacles */
-                        obstaclesAttenuationdB = calcObstaclesAttenuationdB(
-                            {x: curPos[0], y: curPos[1]},
-                            {x: apPos[0], y: apPos[1]},
-                            obstaclesList
+                        obstaclesAttenuationdB = calc_obstacles_attenuation_db(
+                            ary2coordinate(cur_pos),
+                            ary2coordinate(ap_pos),
+                            obstacles
                         )
 
-                        distM = calcDistance(curPos[0], curPos[1], apPos[0], apPos[1], px2meter)
+                        distM = calc_distance_m(cur_pos[0], cur_pos[1], ap_pos[0], ap_pos[1], px2meter)
 
-                        dBPowerAtXY = apPosList[ap_idx].powerdb  - obstaclesAttenuationdB - calcFreeSpaceLossdB(frequency, distM);
-                        if (matrix[y][x] == null || matrix[y][x] < dBPowerAtXY) {
-                            //console.log(apPosList[idx].powerdb, dBPowerAtXY)
-                            matrix[y][x] = dBPowerAtXY
+                        powerdb_at_xy = appos_list[ap_idx].powerdb  - obstaclesAttenuationdB - calc_free_space_loss_db(frequency, distM);
+                        if (matrix[y][x] == null || matrix[y][x] < powerdb_at_xy) {
+                            //console.log(apPosList[idx].powerdb, powerdb_at_xy)
+                            matrix[y][x] = powerdb_at_xy
                         }
                     }
 
@@ -164,44 +168,44 @@
 
         }
 
-        function iterativeUpdatedBPower(matrix, xBox, yBox, dBPower, px2meter, freqHz) {
-            console.log("updateint adjaectt (%d, %d) power=%d (current=%d)", xBox, yBox, dBPower, matrix[yBox][xBox])
-            console.log(matrix[yBox][xBox], dBPower)
-            if (matrix[yBox][xBox] != null) {
-                if (matrix[yBox][xBox] > dBPower) {
-                    console.log("already highpower: OUT");
-                    return;
-                }
-            }
+        //function iterativeUpdatedBPower(matrix, xBox, yBox, dBPower, px2meter, freqHz) {
+        //    console.log("updateint adjaectt (%d, %d) power=%d (current=%d)", xBox, yBox, dBPower, matrix[yBox][xBox])
+        //    console.log(matrix[yBox][xBox], dBPower)
+        //    if (matrix[yBox][xBox] != null) {
+        //        if (matrix[yBox][xBox] > dBPower) {
+        //            console.log("already highpower: OUT");
+        //            return;
+        //        }
+        //    }
 
-            if (dBPower < dBPowerLimit) {
-                console.log("power level too low");
-                return;
-            }
+        //    if (dBPower < dBPowerLimit) {
+        //        console.log("power level too low");
+        //        return;
+        //    }
 
-            matrix[yBox][xBox] = dBPower;
+        //    matrix[yBox][xBox] = dBPower;
 
-            xyLength = 5 * px2meter
-            diagonalLength = 5 * Math.sqrt(2) * px2meter;
-            xydBPower = dBPower - calcFreeSpaceLossdB(freqHz, xyLength)
-            nondiagonaldBPower = dBPower - calcFreeSpaceLossdB(freqHz, diagonalLength)
+        //    xyLength = 5 * px2meter
+        //    diagonalLength = 5 * Math.sqrt(2) * px2meter;
+        //    xydBPower = dBPower - calc_free_space_loss_db(freqHz, xyLength)
+        //    nondiagonaldBPower = dBPower - calc_free_space_loss_db(freqHz, diagonalLength)
 
-            for (dY = -1; dY < 2; dY++) {
-                for (dX = -1; dX < 2; dX++) {
-                    if (dX == 0 && dY == 0) {
-                        continue
-                    }
-                    console.log(dX, dY, xBox, yBox)
-                    if (Math.abs(dY) == Math.abs(dX)) {
-                        iterativeUpdatedBPower(matrix, xBox + dX, yBox + dY, nondiagonaldBPower, px2meter, freqHz)
-                    } else  {
-                        iterativeUpdatedBPower(matrix, xBox + dX, yBox + dY, xydBPower, px2meter, freqHz)
-                    }
-                }
-            }
+        //    for (dY = -1; dY < 2; dY++) {
+        //        for (dX = -1; dX < 2; dX++) {
+        //            if (dX == 0 && dY == 0) {
+        //                continue
+        //            }
+        //            console.log(dX, dY, xBox, yBox)
+        //            if (Math.abs(dY) == Math.abs(dX)) {
+        //                iterativeUpdatedBPower(matrix, xBox + dX, yBox + dY, nondiagonaldBPower, px2meter, freqHz)
+        //            } else  {
+        //                iterativeUpdatedBPower(matrix, xBox + dX, yBox + dY, xydBPower, px2meter, freqHz)
+        //            }
+        //        }
+        //    }
 
 
-        }
+        //}
 
         function dbm2mw(dbm) {
             return Math.pow(10, dbm / 10)
@@ -211,10 +215,10 @@
             return 10 * Math.log10(mw)
         }
 
-        function calcFreeSpaceLossdB(freqHz, distM) {
-            speedOfLight = 299792458; // [m / s]
-            waveLength = speedOfLight / freqHz;
-            dB = 20 * Math.log10(4 * Math.PI * distM / waveLength)
+        function calc_free_space_loss_db(freq_hz, dist_m) {
+            speed_of_light_mps = 299792458; // [m / s]
+            wave_length = speed_of_light_mps/ freq_hz;
+            dB = 20 * Math.log10(4 * Math.PI * dist_m / wave_length)
             //los = Math.pow((4 * Math.PI * distM) / waveLength, 2);
             return dB
         }
@@ -235,7 +239,7 @@
             [-96, "blue"],
         ];
 
-        function calcColorForPower(dBPower) {
+        function calc_color_for_powerdb(dBPower) {
             if (dBPower == null) {
                 return "none";
             }
@@ -248,7 +252,7 @@
             return "none"
         }
 
-        function drawXYinColor(xbox, ybox, color) {
+        function draw_xybox_in_color(xbox, ybox, color) {
             if (color == "none") {
                 return;
             }
@@ -261,22 +265,22 @@
             _ctx.globalAlpha=1.0
         }
 
-        function drawMatrix(matrix) {
+        function draw_matrix(matrix) {
             //for (y in matrix) {
             for (y = 0; y < matrix.length; y++) {
                 //for (x in matrix[y]) {
                 for (x = 0; x < matrix[y].length; x++) {
                     dBPower = matrix[y][x];
-                    color = calcColorForPower(dBPower)
+                    color = calc_color_for_powerdb(dBPower)
                     //console.log(x, y, color)
-                    drawXYinColor(x, y, color)
+                    draw_xybox_in_color(x, y, color)
 
                 }
             }
 
         }
 
-        function drawObstacles(obstacles) {
+        function draw_obstacles(obstacles) {
             var canvas = document.getElementById("canvas-map");
             ctx = canvas.getContext("2d");
             for (idx in obstacles) {
@@ -293,28 +297,28 @@
         }
 
 
-        backgroundImage.onload=function() {
-            _ctx.drawImage(backgroundImage, 0, 0);
+        background_image.onload=function() {
+            _ctx.drawImage(background_image, 0, 0);
 
-            xLim = backgroundImage.width
-            yLim = backgroundImage.height
+            xLim = background_image.width
+            yLim = background_image.height
 
-            xLimBlock = parseInt(xLim / 5);
-            yLimBlock = parseInt(yLim / 5)
-            console.log(xLimBlock, yLimBlock);
+            xbox_max = parseInt(xLim / 5);
+            ybo_max = parseInt(yLim / 5)
+            console.log(xbox_max, ybo_max);
 
-            matrix = initMatrix(xLimBlock, yLimBlock);
+            matrix = init_matrix(xbox_max, ybo_max);
             console.log("inited", matrix)
 
             // fill ap
-            for (key in apPosList) {
-                updateMatrixWithAP(matrix, defaultAPdBPower, apPosList[key].x, apPosList[key].y, px2meter, frequency)
+            for (key in appos_list) {
+                update_matrix_with_ap(matrix, default_ap_powerdb, appos_list[key].x, appos_list[key].y, px2meter, frequency)
             }
-            updateMatrix(matrix, apPosList, obstaclesList, px2meter, frequency)
+            update_matrix(matrix, appos_list, obstacles_list, px2meter, frequency)
 
-            drawMatrix(matrix)
+            draw_matrix(matrix)
             console.log("drawn", matrix);
-            drawObstacles(obstaclesList);
+            draw_obstacles(obstacles_list);
         }
 
         function mapClick(e) {
