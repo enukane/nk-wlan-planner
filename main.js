@@ -332,7 +332,6 @@ function redraw_map() {
 
 background_image.onload = function () {
     redraw_map()
-    return
 }
 
 function update_status(text) {
@@ -382,6 +381,7 @@ function clear_ap(e) {
 
 function add_ap(e) {
     update_status("click on map to add AP, press button to stop")
+    $("button-add-ap").text()
     __map_status = MapStatus.ADD_AP
 }
 
