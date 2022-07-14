@@ -5,8 +5,12 @@ __ctx = __canvas.getContext("2d");
 var MapStatus = {
     NONE: 0,
     ADD_AP: 1,
+    ADD_WALL: 2,
+    ADDING_WALL: 3,
 }
 var __map_status = 0;
+
+var __working_wall_coordinates = null;
 
 
 var background_image = new Image();
@@ -45,6 +49,45 @@ var obstacles_list = [
     { start: { x: 750, y: 400 }, end: { x: 750, y: 749 }, attenuation: 3, material: "wood" },
     { start: { x: 750, y: 400 }, end: { x: 1215, y: 400 }, attenuation: 3, material: "wood" },
 ];
+
+function wall_type_to_params(type_s) {
+    attdb = 0
+    switch (type_s) {
+        case "drywall":
+            attdb = 3
+            break
+        case "bookshelf":
+            attdb = 3
+            break
+        case "exteriorglass":
+            attdb = 3
+            break
+        case "wooddoor":
+            attdb = 6
+            break
+        case "marble":
+            attdb = 6
+            break
+        case "brick":
+            attdb = 10
+            break
+        case "concrete":
+            attdb = 12
+            break
+        case "elevator-shaft":
+            attdb = 30
+            break
+        case "humanbody":
+            attdb = 6 /* 2.4: 4-9, 5: 6-12 */
+            break
+        default:
+            attdb = 3
+            type_s = "drywall"
+            break;
+    }
+
+    return {attenuation: attdb, type: type_s}
+}
 
 var selected_length_px_on_image = 1300;
 var selected_length_meter = 60;
@@ -354,11 +397,18 @@ function map_click_to_add_ap(x, y) {
     redraw_map()
 }
 
-function map_click(e) {
+function get_map_mouse_coordinate(e) {
     var mapOffset = document.querySelector("canvas").getBoundingClientRect();//$("#canvas-map").getBoundingClientRect();
     mouseX = parseInt(e.clientX - mapOffset.left);
     mouseY = parseInt(e.clientY - mapOffset.top);
-    console.log("clicked = ", mouseX, mouseY);
+
+    return {x: mouseX, y: mouseY}
+}
+
+function map_click(e) {
+    xy = get_map_mouse_coordinate(e)
+    mouseX = xy.x
+    mouseY = xy.y
 
     switch (__map_status) {
         case MapStatus.NONE:
@@ -366,6 +416,69 @@ function map_click(e) {
             break;
         case MapStatus.ADD_AP:
             map_click_to_add_ap(mouseX, mouseY)
+            break;
+        default:
+            break;
+    }
+}
+
+function new_wall() {
+    return {
+        start: {
+            x: 0,
+            y: 0
+        },
+        end: {
+            x: 0,
+            y: 0
+        },
+        attenuation: 12,
+        material: "concrete"
+    }
+}
+
+function get_selected_wall_type() {
+    type_s = $("#select-wall-type").val()
+    console.log(type_s)
+    return type_s
+}
+
+function map_mousedown(e) {
+    xy = get_map_mouse_coordinate(e)
+    switch (__map_status) {
+        case MapStatus.ADD_WALL:
+            __working_wall_coordinates = new_wall();
+            __working_wall_coordinates.start.x = xy.x
+            __working_wall_coordinates.start.y = xy.y
+
+            type_s = get_selected_wall_type()
+            param = wall_type_to_params(type_s)
+            console.log(param)
+            __working_wall_coordinates.attenuation = param.attenuation
+            __working_wall_coordinates.material = param.type
+
+            __map_status = MapStatus.ADDING_WALL
+            break;
+        default:
+            break;
+    }
+}
+
+function map_mouseup(e) {
+    xy = get_map_mouse_coordinate(e)
+    switch (__map_status) {
+        case MapStatus.ADD_WALL:
+            __map_status = MapStatus.NONE;
+            update_status(" ")
+            break;
+        case MapStatus.ADDING_WALL:
+            __working_wall_coordinates.end.x = xy.x
+            __working_wall_coordinates.end.y = xy.y
+            obstacles_list.push(__working_wall_coordinates)
+            __working_wall_coordinates = null
+            __map_status = MapStatus.NONE
+            redraw_map();
+            update_status(" ")
             break;
         default:
             break;
@@ -383,6 +496,17 @@ function add_ap(e) {
     update_status("click on map to add AP, press button to stop")
     $("button-add-ap").text()
     __map_status = MapStatus.ADD_AP
+}
+
+function add_wall(e) {
+    update_status("click on drag & drop to draw wall")
+    __map_status = MapStatus.ADD_WALL
+}
+
+function clear_wall(e) {
+    update_status("cleared all wall")
+    obstacles_list = []
+    redraw_map()
 }
 
 function download_clicked() {
@@ -408,6 +532,10 @@ function download_clicked() {
 }
 
 $("#canvas-map").click(function (e) { map_click(e); })
+$("#canvas-map").mousedown(function (e) { map_mousedown(e); })
+$("#canvas-map").mouseup(function (e) { map_mouseup(e); })
 $("#button-clear-ap").click(function(e) { clear_ap(e); })
 $("#button-add-ap").click(function(e) { add_ap(e); })
+$("#button-add-wall").click(function(e) { add_wall(e); })
+$("#button-clear-wall").click(function(e) { clear_wall(e); })
 $("#button-download").click(function (e) { download_clicked(e); })
