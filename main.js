@@ -278,11 +278,11 @@ var dBPower2colors = [
     [-45, "chartreuse"],
     [-50, "lime"],
     [-55, "green"],
-    [-60, "cyan"],
-    [-65, "aqua"],
-    [-70, "cornflowerblue"],
-    [-75, "blue"],
-    [-80, "navy"],
+    [-60, "cornflowerblue"],
+    [-65, "blue"],
+    [-70, "navy"],
+    [-75, "darkblue"],
+    [-80, "midnightblue"],
 ];
 
 function calc_color_for_powerdb(dBPower) {
