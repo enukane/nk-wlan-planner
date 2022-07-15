@@ -8,10 +8,12 @@ var MapStatus = {
     ADD_WALL: 2,
     ADDING_WALL: 3,
     DEL_AP: 4,
+    ADD_HUMAN: 5,
 }
 var __map_status = 0;
 var __ap_delete_range = 20 //px
 var __default_status = "Press Button to operate"
+var __shoulder_width_m = 0.43 //[m]
 
 var __working_wall_coordinates = null;
 
@@ -267,18 +269,20 @@ function calc_free_space_loss_db(freq_hz, dist_m) {
 
 var dBPowerLimit = -96;
 var dBPower2colors = [
-    [-15, "red"],
+    //[-15, "red"],
+    //[-25, "red"],
     [-25, "red"],
+    [-30, "orangered"],
     [-35, "orange"],
-    [-45, "yellow"],
+    [-40, "yellow"],
+    [-45, "chartreuse"],
     [-50, "lime"],
     [-55, "green"],
-    [-60, "teal"],
-    [-65, "navy"],
-    [-70, "blue"],
-    [-85, "blue"],
-    [-90, "navy"],
-    [-96, "blue"],
+    [-60, "cyan"],
+    [-65, "aqua"],
+    [-70, "cornflowerblue"],
+    [-75, "blue"],
+    [-80, "navy"],
 ];
 
 function calc_color_for_powerdb(dBPower) {
@@ -430,6 +434,29 @@ function map_click_to_del_ap(x, y) {
     redraw_map()
 }
 
+function map_click_to_add_human(x, y) {
+    human_params = wall_type_to_params("humanbody")
+    angle_radian = Math.floor(Math.random() * 180) * (Math.PI / 180)
+    end_x = Math.cos(angle_radian) * (__shoulder_width_m / __px2meter) + x
+    end_y = Math.sin(angle_radian) * (__shoulder_width_m / __px2meter) + y
+
+    obstacle = new_wall()
+    obstacle.start.x = x
+    obstacle.start.y = y
+    obstacle.end.x = end_x
+    obstacle.end.y = end_y
+    obstacle.attenuation = human_params.attenuation
+    obstacle.material = "humanbody"
+
+    console.log("add human : ", obstacle)
+
+    obstacles_list.push(obstacle)
+
+    update_status("Added human body")
+    __map_status = MapStatus.NONE
+    redraw_map()
+}
+
 function get_map_mouse_coordinate(e) {
     var mapOffset = document.querySelector("canvas").getBoundingClientRect();//$("#canvas-map").getBoundingClientRect();
     mouseX = parseInt(e.clientX - mapOffset.left);
@@ -453,6 +480,9 @@ function map_click(e) {
         case MapStatus.DEL_AP:
             map_click_to_del_ap(mouseX, mouseY)
             break;
+        case MapStatus.ADD_HUMAN:
+            map_click_to_add_human(mouseX, mouseY)
+            break
         default:
             break;
     }
@@ -550,6 +580,11 @@ function clear_wall(e) {
     redraw_map()
 }
 
+function add_human_body(e) {
+    update_status("click to add human body")
+    __map_status = MapStatus.ADD_HUMAN
+}
+
 function download_clicked() {
     let config_obj = {
         ap: appos_list,
@@ -580,4 +615,5 @@ $("#button-add-ap").click(function(e) { add_ap(e); })
 $("#button-del-ap").click(function(e) { del_ap(e); })
 $("#button-add-wall").click(function(e) { add_wall(e); })
 $("#button-clear-wall").click(function(e) { clear_wall(e); })
+$("#button-add-human").click(function(e) { add_human_body(e); })
 $("#button-download").click(function (e) { download_clicked(e); })
