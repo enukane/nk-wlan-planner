@@ -11,6 +11,7 @@ var MapStatus = {
 }
 var __map_status = 0;
 var __ap_delete_range = 20 //px
+var __default_status = "Press Button to operate"
 
 var __working_wall_coordinates = null;
 
@@ -504,7 +505,7 @@ function map_mouseup(e) {
     switch (__map_status) {
         case MapStatus.ADD_WALL:
             __map_status = MapStatus.NONE;
-            update_status(" ")
+            update_status(__default_status)
             break;
         case MapStatus.ADDING_WALL:
             __working_wall_coordinates.end.x = xy.x
@@ -513,7 +514,7 @@ function map_mouseup(e) {
             __working_wall_coordinates = null
             __map_status = MapStatus.NONE
             redraw_map();
-            update_status(" ")
+            update_status(__default_status)
             break;
         default:
             break;

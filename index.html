@@ -12,33 +12,56 @@
     <style type="text/css" media="screen">
     </style>
 
-    <div>
+    <div class="container">
         <h1>Map</h1>
-        <font color="red" id="map-status"> </font>
+        <canvas id="canvas-map" width="1280" height="800"></canvas>
+        <div id="map-status" class="alert alert-primary" role="alert">
+            Press Button to operate
+        </div>
     </div>
     <div>
-        <canvas id="canvas-map" width="1280" height="800"></canvas>
         <div>
-            <button id="button-add-ap" type="button" class="btn btn-primary toggle">Add AP</button>
-            <button id="button-del-ap" type="button" class="btn btn-warning">Delete AP</button>
-            <button id="button-clear-ap" type="button" class="btn btn-danger">Clear AP</button>
         </div>
-        <div>
-            <select id="select-wall-type" class="form-select" aria-label="select wall type">
-                <option value="drywall" selected>Dry Wall (3 dB)</option>
-                <option value="bookshelf">Bookshelf (3 dB)</option>
-                <option value="exteriorglass" >Exterior Glass (3 dB)</option>
-                <option value="wooddoor" >Wood Door (6 dB)</option>
-                <option value="marble" >Marble Wall (6 dB)</option>
-                <option value="brick" >Brick Wall (10 dB)</option>
-                <option value="concrete">Concrete Wall (12 dB)</option>
-                <option value="elevator-shaft" >Elevator Shaft (30 dB)</option>
-            </select>
-            <button id="button-add-wall" type="button" class="btn btn-primary">Add Wall</button>
-            <button id="button-clear-wall" type="button" class="btn btn-danger">Clear Wall</button>
-        </div>
-        <div>
-            <button id="button-download" type="button" class="btn btn-primary">Download Config</button>
+        <div class="container">
+            <div class="row">
+                <div class="col">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">AP</h5>
+                            <button id="button-add-ap" type="button" class="btn btn-primary toggle">Add AP</button>
+                            <button id="button-del-ap" type="button" class="btn btn-warning">Delete AP</button>
+                            <button id="button-clear-ap" type="button" class="btn btn-danger">Clear AP</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Wall/Obstacles</h5>
+                            <select id="select-wall-type" class="form-select" aria-label="select wall type">
+                                <option value="drywall" selected>Dry Wall (3 dB)</option>
+                                <option value="bookshelf">Bookshelf (3 dB)</option>
+                                <option value="exteriorglass">Exterior Glass (3 dB)</option>
+                                <option value="wooddoor">Wood Door (6 dB)</option>
+                                <option value="marble">Marble Wall (6 dB)</option>
+                                <option value="brick">Brick Wall (10 dB)</option>
+                                <option value="concrete">Concrete Wall (12 dB)</option>
+                                <option value="elevator-shaft">Elevator Shaft (30 dB)</option>
+                            </select>
+                            <button id="button-add-wall" type="button" class="btn btn-primary">Add Wall</button>
+                            <button id="button-clear-wall" type="button" class="btn btn-danger">Clear Wall</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Save/Load</h5>
+                            <button id="button-download" type="button" class="btn btn-primary">Download Config</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js"
