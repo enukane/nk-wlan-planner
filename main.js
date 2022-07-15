@@ -7,8 +7,10 @@ var MapStatus = {
     ADD_AP: 1,
     ADD_WALL: 2,
     ADDING_WALL: 3,
+    DEL_AP: 4,
 }
 var __map_status = 0;
+var __ap_delete_range = 20 //px
 
 var __working_wall_coordinates = null;
 
@@ -143,6 +145,10 @@ function calc_real_point(xbox, ybox) {
 
 function calc_distance_m(x0, y0, x1, y1, px2meter) {
     return Math.sqrt(Math.pow(Math.abs(x0 - x1) * px2meter, 2) + Math.pow(Math.abs(y0 - y1) * px2meter, 2));
+}
+
+function calc_distance_px(x0, y0, x1, y1) {
+    return calc_distance_m(x0, y0, x1, y1, 1)
 }
 
 function is_line_crossing(a, b, c, d) {
@@ -397,6 +403,32 @@ function map_click_to_add_ap(x, y) {
     redraw_map()
 }
 
+function map_click_to_del_ap(x, y) {
+    del_idx = null
+    for (ap_idx in appos_list) {
+        ap = appos_list[ap_idx]
+        if (ap == null) {
+            continue
+        }
+
+        distM = calc_distance_px(x, y, ap.x, ap.y)
+        console.log("dist: ", distM, x, y, ap.x, ap.y)
+        if (distM < __ap_delete_range) {
+            del_idx = ap_idx
+            break
+        }
+    }
+    console.log("del_idx:", del_idx)
+    if (del_idx != null) {
+        appos_list.splice(del_idx, 1)
+    }
+    
+    __map_status = MapStatus.NONE;
+    update_status("AP deleted")
+
+    redraw_map()
+}
+
 function get_map_mouse_coordinate(e) {
     var mapOffset = document.querySelector("canvas").getBoundingClientRect();//$("#canvas-map").getBoundingClientRect();
     mouseX = parseInt(e.clientX - mapOffset.left);
@@ -416,6 +448,9 @@ function map_click(e) {
             break;
         case MapStatus.ADD_AP:
             map_click_to_add_ap(mouseX, mouseY)
+            break;
+        case MapStatus.DEL_AP:
+            map_click_to_del_ap(mouseX, mouseY)
             break;
         default:
             break;
@@ -498,6 +533,11 @@ function add_ap(e) {
     __map_status = MapStatus.ADD_AP
 }
 
+function del_ap(e) {
+    update_status("clock on map to delete AP")
+    __map_status = MapStatus.DEL_AP
+}
+
 function add_wall(e) {
     update_status("click on drag & drop to draw wall")
     __map_status = MapStatus.ADD_WALL
@@ -536,6 +576,7 @@ $("#canvas-map").mousedown(function (e) { map_mousedown(e); })
 $("#canvas-map").mouseup(function (e) { map_mouseup(e); })
 $("#button-clear-ap").click(function(e) { clear_ap(e); })
 $("#button-add-ap").click(function(e) { add_ap(e); })
+$("#button-del-ap").click(function(e) { del_ap(e); })
 $("#button-add-wall").click(function(e) { add_wall(e); })
 $("#button-clear-wall").click(function(e) { clear_wall(e); })
 $("#button-download").click(function (e) { download_clicked(e); })
