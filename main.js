@@ -9,6 +9,8 @@ var MapStatus = {
     ADDING_WALL: 3,
     DEL_AP: 4,
     ADD_HUMAN: 5,
+    SELECT_SCALE: 6,
+    SELECTING_SCALE: 7,
 }
 var __map_status = 0;
 var __ap_delete_range = 20 //px
@@ -16,6 +18,8 @@ var __default_status = "Press Button to operate"
 var __shoulder_width_m = 0.43 //[m]
 
 var __working_wall_coordinates = null;
+
+var __selecting_scale = null;
 
 
 var background_image = new Image();
@@ -503,10 +507,34 @@ function new_wall() {
     }
 }
 
+function new_scale() {
+    return {
+        start : {
+            x: 0,
+            y: 0
+        },
+        end: {
+            x: 0,
+            y: 0
+        },
+        px: 0.0,
+        meter: 0.0,
+        px2meter: 0.0
+    }
+}
+
 function get_selected_wall_type() {
     type_s = $("#select-wall-type").val()
     console.log(type_s)
     return type_s
+}
+
+function get_scale_meter() {
+    meter = parseFloat($("#text-scale-meter").val())
+    if (meter < 0.0) {
+        meter = 1.0 // never under 0
+    }
+    return meter
 }
 
 function map_mousedown(e) {
@@ -525,6 +553,11 @@ function map_mousedown(e) {
 
             __map_status = MapStatus.ADDING_WALL
             break;
+        case MapStatus.SELECT_SCALE:
+            __selecting_scale = new_scale()
+            __selecting_scale.start.x = xy.x
+            __selecting_scale.start.y = xy.y
+            __map_status = MapStatus.SELECTING_SCALE
         default:
             break;
     }
@@ -534,6 +567,7 @@ function map_mouseup(e) {
     xy = get_map_mouse_coordinate(e)
     switch (__map_status) {
         case MapStatus.ADD_WALL:
+        case MapStatus.SELECT_SCALE:
             __map_status = MapStatus.NONE;
             update_status(__default_status)
             break;
@@ -545,6 +579,25 @@ function map_mouseup(e) {
             __map_status = MapStatus.NONE
             redraw_map();
             update_status(__default_status)
+            break;
+        case MapStatus.SELECTING_SCALE:
+            __selecting_scale.end.x = xy.x
+            __selecting_scale.end.y = xy.y
+
+            meter = get_scale_meter()
+            px = calc_distance_px(
+                __selecting_scale.start.x, __selecting_scale.start.y,
+                __selecting_scale.end.x, __selecting_scale.end.y
+            )
+            selected_length_px_on_image = px
+            selected_length_meter = meter
+            __px2meter = selected_length_meter / selected_length_px_on_image
+            console.log("new px2meter meter=%f, px=%f, px2meter=%f", meter, px, __px2meter)
+
+            __selecting_scale = null
+            __map_status = MapStatus.NONE
+            redraw_map();
+            update_status(__default_status);
             break;
         default:
             break;
@@ -585,6 +638,11 @@ function add_human_body(e) {
     __map_status = MapStatus.ADD_HUMAN
 }
 
+function select_scale(e) {
+    update_status("Drag to select scale [m]")
+    __map_status = MapStatus.SELECT_SCALE
+}
+
 function download_clicked() {
     let config_obj = {
         ap: appos_list,
@@ -616,4 +674,5 @@ $("#button-del-ap").click(function(e) { del_ap(e); })
 $("#button-add-wall").click(function(e) { add_wall(e); })
 $("#button-clear-wall").click(function(e) { clear_wall(e); })
 $("#button-add-human").click(function(e) { add_human_body(e); })
+$("#button-select-scale").click(function(e) { select_scale(e); })
 $("#button-download").click(function (e) { download_clicked(e); })
