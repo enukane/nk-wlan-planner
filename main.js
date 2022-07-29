@@ -730,6 +730,37 @@ function download_clicked() {
     anchor.dispatchEvent(mouse_event)
 }
 
+function change_config(e) {
+    var file = e.target.files[0];
+    console.log("change_config file=", file)
+
+    if (!file.type.match("application/json")) {
+        update_status("Unknown config file type. Select json");
+        return;
+    }
+
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        var config_json = JSON.parse(reader.result)
+        console.log(config_json)
+
+        if (!config_json.ap || !config_json.obstacles || !config_json.px2meter) {
+            update_status("Irregular config detected: no ap or obstacles or px2meter")
+        }
+
+        appos_list = config_json.ap
+        obstacles_list = config_json.obstacles
+        __px2meter = config_json.px2meter
+
+        update_status("Loading config done")
+
+        redraw_map()
+
+    }
+    reader.readAsText(file)
+
+}
+
 $("#canvas-map").click(function (e) { map_click(e); })
 $("#canvas-map").mousedown(function (e) { map_mousedown(e); })
 $("#canvas-map").mouseup(function (e) { map_mouseup(e); })
@@ -742,3 +773,4 @@ $("#button-add-human").click(function(e) { add_human_body(e); })
 $("#button-select-scale").click(function(e) { select_scale(e); })
 $("#button-image-upload").on('change', function(e) { change_image(e); })
 $("#button-download").click(function (e) { download_clicked(e); })
+$("#button-config-upload").on('change', function(e) { change_config(e); })
