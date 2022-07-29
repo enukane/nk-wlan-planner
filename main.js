@@ -27,11 +27,11 @@ background_image.src = "map.png";
 
 var frequency = 5120 * 1000 * 1000;
 var appos_list = [
-    { x: 200, y: 250, powerdb: 20.0 },
-    { x: 200, y: 500, powerdb: 20.0 },
-    { x: 1000, y: 600, powerdb: 20.0 },
-    { x: 575, y: 200, powerdb: 20.0 },
-    { x: 1000, y: 175, powerdb: 20.0 },
+    { x: 176, y: 163, powerdb: 20.0 },
+    { x: 537, y: 163, powerdb: 20.0 },
+    { x: 927, y: 163, powerdb: 20.0 },
+    { x: 115, y: 540, powerdb: 20.0 },
+    { x: 1018, y: 624, powerdb: 20.0 },
 ];
 
 /*
@@ -45,18 +45,28 @@ var appos_list = [
  * elevator shaft: 30
 */
 var obstacles_list = [
-    { start: { x: 23, y: 292 }, end: { x: 1216, y: 292 }, attenuation: 12, material: "wood" },
-    { start: { x: 23, y: 412 }, end: { x: 180, y: 412 }, attenuation: 12, material: "wood" },
-    { start: { x: 210, y: 412 }, end: { x: 494, y: 412 }, attenuation: 12, material: "wood" },
+    // horizontal
+    /// upper room
+    { start: { x: 21, y: 311 }, end: { x: 1246, y: 311 }, attenuation: 12, material: "concrete" },
+    /// lower room  left
+    { start: { x: 21, y: 437 }, end: { x: 64, y: 437 }, attenuation: 6, material: "marble" },
+    { start: { x: 64, y: 437 }, end: { x: 113, y: 437 }, attenuation: 6, material: "wooddoor" }, // door
+    { start: { x: 113, y: 437 }, end: { x: 506, y: 437 }, attenuation: 6, material: "marble" },
+    /// lower room right
+    { start: { x: 764, y: 427 }, end: { x: 815, y: 427 }, attenuation: 6, material: "marble" },
+    { start: { x: 815, y: 427 }, end: { x: 862, y: 427 }, attenuation: 6, material: "wooddoor" }, // door
+    { start: { x: 862, y: 427 }, end: { x: 1168, y: 427 }, attenuation: 6, material: "marble" },
+    { start: { x: 1168, y: 427 }, end: { x: 1215, y: 427 }, attenuation: 6, material: "wooddoor" }, // door
+    { start: { x: 1215, y: 427 }, end: { x: 1246, y: 427 }, attenuation: 6, material: "marble" },
 
-    { start: { x: 301, y: 35 }, end: { x: 301, y: 292 }, attenuation: 3, material: "wood" },
-    { start: { x: 581, y: 35 }, end: { x: 581, y: 292 }, attenuation: 3, material: "wood" },
-    { start: { x: 859, y: 35 }, end: { x: 859, y: 292 }, attenuation: 3, material: "wood" },
-
-    { start: { x: 494, y: 412 }, end: { x: 494, y: 749}, attenuation: 3, material: "wood" },
-
-    { start: { x: 750, y: 400 }, end: { x: 750, y: 749 }, attenuation: 3, material: "wood" },
-    { start: { x: 750, y: 400 }, end: { x: 1215, y: 400 }, attenuation: 3, material: "wood" },
+    // vertical
+    /// upper room, left to right
+    { start: { x: 305, y: 36 }, end: { x: 305, y: 311 }, attenuation: 6, material: "concrete" },
+    { start: { x: 593, y: 36 }, end: { x: 593, y: 311 }, attenuation: 6, material: "concrete" },
+    { start: { x: 877, y: 36 }, end: { x: 877, y: 311 }, attenuation: 6, material: "concrete" },
+    /// lower room, left to right
+    { start: { x: 506, y: 437 }, end: { x: 506, y: 793 }, attenuation: 6, material: "marble" },
+    { start: { x: 764, y: 427 }, end: { x: 764, y: 793 }, attenuation: 6, material: "marble" },
 ];
 
 function wall_type_to_params(type_s) {
@@ -350,24 +360,25 @@ function redraw_map() {
 
     __ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-    img_x_max = background_image.width
-    img_y_max = background_image.height
-    canvas_x_max = canvas.width
-    canvas_y_max = canvas.height
-    rate_x = canvas_x_max / img_x_max
-    rate_y = canvas_y_max / img_y_max
-    rate = 1.0
-    if (rate_x > rate_y) {
-        rate = rate_x
+    img_w = background_image.width
+    img_h = background_image.height
+    canvas_img_w = canvas_w = canvas.width
+    canvas_img_h = canvas_h = canvas.height
+
+    if (img_w >= img_h) {
+        canvas_img_h = canvas_w / img_w * img_h
     } else {
-        rate = rate_y
+        canvas_img_w = canvas_h / img_h * img_w
     }
+    //console.log("rate=", rate, rate_x, rate_y, canvas_x_max, canvas_y_max, img_x_max, img_y_max)
+    console.log("image plot (%d, %d) screen, img (%d, %d) transporm to (%d, %d)",
+        canvas_w, canvas_h, img_w, img_h, canvas_img_w, canvas_img_h)
     __ctx.drawImage(background_image,
         0, 0, background_image.width, background_image.height,
-        0, 0, canvas_x_max * rate, canvas_y_max * rate);
+        0, 0, canvas_img_w, canvas_img_h);
 
-    xLim = background_image.width
-    yLim = background_image.height
+    xLim = canvas_img_w
+    yLim = canvas_img_h
 
     xbox_max = parseInt(xLim / 5);
     ybo_max = parseInt(yLim / 5)
@@ -477,6 +488,7 @@ function map_click(e) {
     switch (__map_status) {
         case MapStatus.NONE:
             /* do nothing */
+            console.log(mouseX, mouseY)
             break;
         case MapStatus.ADD_AP:
             map_click_to_add_ap(mouseX, mouseY)
@@ -643,6 +655,27 @@ function select_scale(e) {
     __map_status = MapStatus.SELECT_SCALE
 }
 
+function change_image(e) {
+    console.log("change_image");
+    var file = e.target.files[0];
+    console.log("change_image file=", file)
+
+    if (!file.type.match('image/.*')) {
+        update_status("Unknown file type. Select image");
+        return;
+    }
+
+    var reader = new FileReader();
+    reader.onload = function() {
+        var imgsrc = reader.result;
+        background_image.src = imgsrc
+        background_image.onload = function () {
+            redraw_map()
+        }
+    }
+    reader.readAsDataURL(file)
+}
+
 function download_clicked() {
     let config_obj = {
         ap: appos_list,
@@ -675,4 +708,5 @@ $("#button-add-wall").click(function(e) { add_wall(e); })
 $("#button-clear-wall").click(function(e) { clear_wall(e); })
 $("#button-add-human").click(function(e) { add_human_body(e); })
 $("#button-select-scale").click(function(e) { select_scale(e); })
+$("#button-image-upload").on('change', function(e) { change_image(e); })
 $("#button-download").click(function (e) { download_clicked(e); })
