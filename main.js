@@ -23,7 +23,7 @@ var __selecting_scale = null;
 
 
 var background_image = new Image();
-background_image.src = "map.png";
+var __map_file_name = background_image.src = "map.png";
 
 var frequency = 5120 * 1000 * 1000;
 var appos_list = [
@@ -688,6 +688,8 @@ function change_image(e) {
     var file = e.target.files[0];
     console.log("change_image file=", file)
 
+    __map_file_name = file.name;
+
     if (!file.type.match('image/.*')) {
         update_status("Unknown file type. Select image");
         return;
@@ -708,6 +710,8 @@ function download_clicked() {
     let config_obj = {
         ap: appos_list,
         obstacles: obstacles_list,
+        map_image_file: __map_file_name,
+        px2meter: __px2meter
     }
     let config_s = JSON.stringify(config_obj)
     let blob = new Blob([config_s], {type: 'application/json'})
