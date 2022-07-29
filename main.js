@@ -355,6 +355,33 @@ function draw_obstacles(obstacles) {
     }
 }
 
+function draw_line(x0, y0, x1, y1) {
+    __ctx.beginPath();
+    __ctx.moveTo(x0, y0);
+    __ctx.lineTo(x1, y1)
+    __ctx.strokeStyle = "black"
+    __ctx.lineWidth=1
+    __ctx.stroke();
+
+}
+
+function draw_text_centered(x, y, width, text) {
+    __ctx.textAlign = "center";
+    __ctx.fillStyle = "black"
+    __ctx.font = "15px Arial"
+    __ctx.fillText(text, x, y, width)
+}
+
+function draw_scale(px2meter) {
+    draw_line(25, 15, 25, 21);
+    draw_line(75, 15, 75, 21);
+    draw_line(25, 18, 75, 18);
+
+    meter_for_50px = (50 * __px2meter).toFixed(1)
+    draw_text_centered(50, 15, 50, meter_for_50px + " m")
+
+}
+
 function redraw_map() {
     var canvas = document.getElementById("canvas-map");
 
@@ -397,6 +424,7 @@ function redraw_map() {
     //console.log("drawn", matrix);
     draw_obstacles(obstacles_list);
 
+    draw_scale(__px2meter)
 }
 
 background_image.onload = function () {
