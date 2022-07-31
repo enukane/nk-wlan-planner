@@ -34,6 +34,13 @@ var appos_list = [
     { x: 1018, y: 624, powerdb: 20.0 },
 ];
 
+var attdb2color = [
+    [4, "saddlebrown"],
+    [7, "brown"],
+    [11, "darkred"],
+    [13, "purple"],
+    [30, "indigo"],
+]
 /*
  * drywall: 3
  * bookchelf: 2
@@ -106,6 +113,19 @@ function wall_type_to_params(type_s) {
     }
 
     return {attenuation: attdb, type: type_s}
+}
+
+function get_obstacle_color_from_attdb(attdb) {
+    if (attdb == null || attdb == undefined) {
+        return "black"
+    }
+
+    for (idx in attdb2color) {
+        if (attdb2color[idx][0] > attdb) {
+            return attdb2color[idx][1]
+        }
+
+    }
 }
 
 var selected_length_px_on_image = 1300;
@@ -349,7 +369,7 @@ function draw_obstacles(obstacles) {
         ctx.beginPath();
         ctx.moveTo(start.x, start.y);
         ctx.lineTo(end.x, end.y);
-        ctx.strokeStyle = "purple"
+        ctx.strokeStyle = get_obstacle_color_from_attdb(obstacles[idx].attenuation)
         ctx.lineWidth = 10;
         ctx.stroke();
     }
