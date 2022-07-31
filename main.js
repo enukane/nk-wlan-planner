@@ -39,7 +39,7 @@ var attdb2color = [
     [7, "brown"],
     [11, "darkred"],
     [13, "purple"],
-    [30, "indigo"],
+    [31, "indigo"],
 ]
 /*
  * drywall: 3
