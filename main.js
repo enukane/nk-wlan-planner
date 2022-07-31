@@ -234,7 +234,7 @@ function update_matrix(matrix, appos_list, obstacles, px2meter, frequency) {
 
                 distM = calc_distance_m(cur_pos[0], cur_pos[1], ap_pos[0], ap_pos[1], px2meter)
 
-                powerdb_at_xy = appos_list[ap_idx].powerdb - obstaclesAttenuationdB - calc_free_space_loss_db(frequency, distM);
+                powerdb_at_xy = appos_list[ap_idx].powerdb - obstaclesAttenuationdB - calc_free_space_loss_db(__frequency, distM);
                 if (matrix[y][x] == null || matrix[y][x] < powerdb_at_xy) {
                     //console.log(apPosList[idx].powerdb, powerdb_at_xy)
                     matrix[y][x] = powerdb_at_xy
@@ -436,9 +436,9 @@ function redraw_map() {
 
     // fill ap
     for (key in appos_list) {
-        update_matrix_with_ap(matrix, default_ap_powerdb, appos_list[key].x, appos_list[key].y, __px2meter, frequency)
+        update_matrix_with_ap(matrix, default_ap_powerdb, appos_list[key].x, appos_list[key].y, __px2meter, __frequency)
     }
-    update_matrix(matrix, appos_list, obstacles_list, __px2meter, frequency)
+    update_matrix(matrix, appos_list, obstacles_list, __px2meter, __frequency)
 
     draw_matrix(matrix)
     //console.log("drawn", matrix);
@@ -700,7 +700,7 @@ function add_human_body(e) {
 
 function change_freqhz(e) {
     console.log(e)
-    frequency = parseInt(e.currentTarget.value)
+    __frequency = parseInt(e.currentTarget.value)
     redraw_map()
 }
 
