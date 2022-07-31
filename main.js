@@ -25,7 +25,7 @@ var __selecting_scale = null;
 var background_image = new Image();
 var __map_file_name = background_image.src = "map.png";
 
-var frequency = 5120 * 1000 * 1000;
+var __frequency = 5180 * 1000 * 1000;
 var appos_list = [
     { x: 176, y: 163, powerdb: 20.0 },
     { x: 537, y: 163, powerdb: 20.0 },
@@ -698,6 +698,12 @@ function add_human_body(e) {
     __map_status = MapStatus.ADD_HUMAN
 }
 
+function change_freqhz(e) {
+    console.log(e)
+    frequency = parseInt(e.currentTarget.value)
+    redraw_map()
+}
+
 function select_scale(e) {
     update_status("Drag to select scale [m]")
     __map_status = MapStatus.SELECT_SCALE
@@ -790,6 +796,7 @@ $("#button-del-ap").click(function(e) { del_ap(e); })
 $("#button-add-wall").click(function(e) { add_wall(e); })
 $("#button-clear-wall").click(function(e) { clear_wall(e); })
 $("#button-add-human").click(function(e) { add_human_body(e); })
+$("#select-freq-type").change(function(e) { change_freqhz(e); })
 $("#button-select-scale").click(function(e) { select_scale(e); })
 $("#button-image-upload").on('change', function(e) { change_image(e); })
 $("#button-download").click(function (e) { download_clicked(e); })
