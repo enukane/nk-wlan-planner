@@ -462,6 +462,8 @@ function map_click_to_add_ap(x, y) {
         y: y,
         powerdb: 20.0, /* XXX */
     }
+    powerdb = parseInt($("#ap-param-powerdb").val())
+    new_ap.powerdb = powerdb
     console.log("add_ap: ", new_ap)
     appos_list.push(new_ap)
 
