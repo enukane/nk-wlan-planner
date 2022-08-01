@@ -420,11 +420,19 @@ function redraw_map() {
     canvas_img_w = canvas_w = canvas.width
     canvas_img_h = canvas_h = canvas.height
 
-    if (img_w >= img_h) {
-        canvas_img_h = canvas_w / img_w * img_h
+    fit_rate_x = canvas_w / img_w
+    fit_rate_y = canvas_h / img_h
+    fit_rate = 1.0
+
+    if (fit_rate_x > fit_rate_y) {
+        fit_rate = fit_rate_y
     } else {
-        canvas_img_w = canvas_h / img_h * img_w
+        fit_rate = fit_rate_x
     }
+
+    canvas_img_w = img_w * fit_rate
+    canvas_img_h = img_h * fit_rate
+
     //console.log("rate=", rate, rate_x, rate_y, canvas_x_max, canvas_y_max, img_x_max, img_y_max)
     console.log("image plot (%d, %d) screen, img (%d, %d) transporm to (%d, %d)",
         canvas_w, canvas_h, img_w, img_h, canvas_img_w, canvas_img_h)
