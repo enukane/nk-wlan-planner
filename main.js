@@ -387,7 +387,7 @@ function draw_obstacles(obstacles) {
         ctx.moveTo(start.x, start.y);
         ctx.lineTo(end.x, end.y);
         ctx.strokeStyle = get_obstacle_color_from_attdb(obstacles[idx].attenuation)
-        ctx.lineWidth = 10;
+        ctx.lineWidth = 5;
         ctx.stroke();
     }
 }
