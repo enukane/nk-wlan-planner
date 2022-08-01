@@ -737,17 +737,17 @@ function add_ap(e) {
 }
 
 function del_ap(e) {
-    update_status("clock on map to delete AP")
+    update_status("click on map to delete AP")
     __map_status = MapStatus.DEL_AP
 }
 
 function add_wall(e) {
-    update_status("click on drag & drop to draw wall")
+    update_status("drag to draw wall")
     __map_status = MapStatus.ADD_WALL
 }
 
 function del_wall(e) {
-    update_status("click to delete wall")
+    update_status("click on map to delete wall")
     __map_status = MapStatus.DEL_WALL;
 }
 
@@ -758,7 +758,7 @@ function clear_wall(e) {
 }
 
 function add_human_body(e) {
-    update_status("click to add human body")
+    update_status("click on map to add human body")
     __map_status = MapStatus.ADD_HUMAN
 }
 
@@ -769,7 +769,7 @@ function change_freqhz(e) {
 }
 
 function select_scale(e) {
-    update_status("Drag to select scale [m]")
+    update_status("drag to select scale [m]")
     __map_status = MapStatus.SELECT_SCALE
 }
 
