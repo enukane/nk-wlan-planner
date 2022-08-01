@@ -27,7 +27,7 @@ var background_image = new Image();
 var __map_file_name = background_image.src = "map.png";
 
 var __frequency = 5180 * 1000 * 1000;
-var AntennaPattern = {
+var AntennaPatterns = {
     STEEP0: {
         base: "",
         name: "0 dBi Directional",
@@ -79,7 +79,7 @@ var appos_list = [
     { x: 927, y: 163, powerdb: 20.0 },
     { x: 115, y: 540, powerdb: 20.0 },
     { x: 1018, y: 624, powerdb: 20.0 },
-    { x: 112, y: 372, powerdb: 20.0, direction: { rad: 0, pattern: AntennaPattern.DIRPATCH0 } },
+    { x: 112, y: 372, powerdb: 20.0, direction: { degree: 0, pattern: AntennaPatterns.DIRPATCH0 } },
 ];
 
 var attdb2color = [
@@ -299,10 +299,19 @@ function calc_directional_power_db_of_ap_to_xy(ap, xp, yp) {
     let appowerdb = ap.powerdb
     let ap_x = ap.x
     let ap_y = ap.y
-    let ap_direction_rad = ap.direction.rad
+    let ap_direction_rad = degree2rad(-1 * ap.direction.degree)
     let ap_xy_rad = line2rad(ap_x, ap_y, xp, yp)
-    let dir_xy_rad = Math.abs(ap_direction_rad - ap_xy_rad)
+    let diff_rad = 0
+    if (ap_direction_rad > ap_xy_rad) {
+        diff_rad = ap_direction_rad - ap_xy_rad
+    } else {
+        diff_rad = ap_xy_rad - ap_direction_rad
+    }
+    let dir_xy_rad = Math.abs(diff_rad)
     let dir_xy_deg = parseInt(rad2degree(dir_xy_rad))
+    if (dir_xy_deg > 180) {
+        dir_xy_deg = 360 - dir_xy_deg
+    }
     dir_xy_deg = parseInt(dir_xy_deg / ap.direction.pattern.resolution)
     let biasdb = ap.direction.pattern.bias_map[dir_xy_deg]
     if (biasdb == null) {
@@ -568,9 +577,20 @@ function map_click_to_add_ap(x, y) {
         x: x, 
         y: y,
         powerdb: 20.0, /* XXX */
+        direction: null,
     }
-    powerdb = parseInt($("#ap-param-powerdb").val())
+    let powerdb = parseInt($("#ap-param-powerdb").val())
     new_ap.powerdb = powerdb
+    let angle_deg = parseInt($("#ap-param-antenna-angle").val())
+    let antpattern_s = $("#ap-param-antenna-type").val()
+    if (AntennaPatterns[antpattern_s] != undefined) {
+        new_ap.direction = {
+            degree: angle_deg,
+            pattern: AntennaPatterns[antpattern_s],
+        }
+    }
+
+
     console.log("add_ap: ", new_ap)
     appos_list.push(new_ap)
 
@@ -948,3 +968,9 @@ $("#button-select-scale").click(function(e) { select_scale(e); })
 $("#button-image-upload").on('change', function(e) { change_image(e); })
 $("#button-download").click(function (e) { download_clicked(e); })
 $("#button-config-upload").on('change', function(e) { change_config(e); })
+
+// add option of antenna
+for (const [key, pattern] of Object.entries(AntennaPatterns)) {
+    let opt = $('<option>').val(key).text(pattern.name)
+    $("#ap-param-antenna-type").append(opt)
+}

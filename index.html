@@ -33,6 +33,7 @@
                             <button id="button-del-ap" type="button" class="btn btn-warning">Delete AP</button>
                             <button id="button-clear-ap" type="button" class="btn btn-danger">Clear AP</button>
                             <h5 class="card-title">AP Parameters</h5>
+                            <h6 class="dard-title">Tx Power</h6>
                             <select id="ap-param-powerdb" class="form-select" aria-label="select ap power in dBm">
                                 <option value="10">10 dBm (10 mW)</option>
                                 <option value="14">14 dBm (25 mW)</option>
@@ -41,6 +42,12 @@
                                 <option value="23">23 dBm (200 mW)</option>
                                 <option value="24">24 dBm (250 mW)</option>
                             </select>
+                            <h6 class="dard-title">Antenna Pattern</h6>
+                            <select id="ap-param-antenna-type" class="form-select" aria-label="select ap power in dBm">
+                                <option value="0" selected>Omni-Directional</option>
+                            </select>
+                            <h6 class="card-title">Antenna Angle (top: 0)</h6>
+                            <input type="number" class="form-range" value="0" min="0" max="359" id="ap-param-antenna-angle">
                         </div>
                     </div>
                 </div>
