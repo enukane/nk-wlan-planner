@@ -27,12 +27,59 @@ var background_image = new Image();
 var __map_file_name = background_image.src = "map.png";
 
 var __frequency = 5180 * 1000 * 1000;
+var AntennaPattern = {
+    STEEP0: {
+        base: "",
+        name: "0 dBi Directional",
+        peak_db: 0,
+        resolution: 10, bias_map: [
+        0, -0.2, -1,    // 0, 10, 20
+        -2.5, -6, -20,  // 30, 40, 50
+        -30, -40, -40,  // 60, 70, 80
+        -40, -35, -35,  // 90, 100, 120
+        -25, -25, -25,  // 120, 130, 140
+        -25, -25, -25,  // 150, 160, 170
+        -40             // 180
+    ]},
+    DIRPATCH0: {
+        base: "WLE-HG-DA",
+        name: "9dBi Directional Half-angle 65+5", 
+        peak_db: 9,
+        resolution: 10,
+        bias_map: [
+            -0, -1, -2,    // 0, 10, 20
+            -3, -5, -8,  // 30, 40, 50
+            -10, -12, -18,  // 60, 70, 80
+            -23, -30, -30,  // 90, 100, 120
+            -20, -30, -30,  // 120, 130, 140
+            -30, -25, -22,  // 150, 160, 170
+            -18             // 180
+        ],
+    },
+    DIRPATCH1: {
+        base: "CANT9103",
+        name: "6dBi Directional Half-angle 70",
+        peak_db: 0, // included
+        resolution: 10,
+        bias_map: [
+            6, 6, 6, // 0, 10, 20
+            6, 3, 0, // 30, 40, 50
+            0, 0, -5, // 60, 70, 80
+            -10, -10, -10, // 90, 100, 110
+            -15, -8, -8, // 120, 130, 140
+            -10, -13, -15, // 150, 160, 170
+            -25
+        ]
+    },
+}
+    
 var appos_list = [
     { x: 176, y: 163, powerdb: 20.0 },
     { x: 537, y: 163, powerdb: 20.0 },
     { x: 927, y: 163, powerdb: 20.0 },
     { x: 115, y: 540, powerdb: 20.0 },
     { x: 1018, y: 624, powerdb: 20.0 },
+    { x: 112, y: 372, powerdb: 20.0, direction: { rad: 0, pattern: AntennaPattern.DIRPATCH0 } },
 ];
 
 var attdb2color = [
@@ -235,6 +282,36 @@ function ary2coordinate(pos) {
     return { x: pos[0], y: pos[1] }
 }
 
+function degree2rad(degree) {
+    return degree * (Math.PI / 180)
+}
+
+function rad2degree(rad) {
+    return rad / (Math.PI / 180)
+}
+
+function line2rad(x0, y0, x1, y1) {
+    let val =  Math.atan2(y1 - y0, x1 - x0)
+    return val
+}
+
+function calc_directional_power_db_of_ap_to_xy(ap, xp, yp) {
+    let appowerdb = ap.powerdb
+    let ap_x = ap.x
+    let ap_y = ap.y
+    let ap_direction_rad = ap.direction.rad
+    let ap_xy_rad = line2rad(ap_x, ap_y, xp, yp)
+    let dir_xy_rad = Math.abs(ap_direction_rad - ap_xy_rad)
+    let dir_xy_deg = parseInt(rad2degree(dir_xy_rad))
+    dir_xy_deg = parseInt(dir_xy_deg / ap.direction.pattern.resolution)
+    let biasdb = ap.direction.pattern.bias_map[dir_xy_deg]
+    if (biasdb == null) {
+        return appowerdb
+    }
+
+    return appowerdb + ap.direction.pattern.peak_db + biasdb
+}
+
 function update_matrix(matrix, appos_list, obstacles, px2meter, frequency) {
     for (y = 0; y < matrix.length; y++) {
         for (x = 0; x < matrix[y].length; x++) {
@@ -251,7 +328,12 @@ function update_matrix(matrix, appos_list, obstacles, px2meter, frequency) {
 
                 distM = calc_distance_m(cur_pos[0], cur_pos[1], ap_pos[0], ap_pos[1], px2meter)
 
-                powerdb_at_xy = appos_list[ap_idx].powerdb - obstaclesAttenuationdB - calc_free_space_loss_db(__frequency, distM);
+                powerdb_at_xy = 0
+                if (appos_list[ap_idx].direction == null) {
+                    powerdb_at_xy = appos_list[ap_idx].powerdb - obstaclesAttenuationdB - calc_free_space_loss_db(__frequency, distM);
+                } else {
+                    powerdb_at_xy = calc_directional_power_db_of_ap_to_xy(appos_list[ap_idx], cur_pos[0], cur_pos[1]) - obstaclesAttenuationdB - calc_free_space_loss_db(__frequency, distM);
+                }
                 if (matrix[y][x] == null || matrix[y][x] < powerdb_at_xy) {
                     //console.log(apPosList[idx].powerdb, powerdb_at_xy)
                     matrix[y][x] = powerdb_at_xy
