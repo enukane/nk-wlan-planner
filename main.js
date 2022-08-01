@@ -55,34 +55,36 @@ var attdb2color = [
 var obstacles_list = [
     // horizontal
     /// upper room
-    { start: { x: 21, y: 311 }, end: { x: 1246, y: 311 }, attenuation: 12, material: "concrete" },
+    { start: { x: 21, y: 301 }, end: { x: 1211, y: 301 }, attenuation: 12, material: "concrete" },
     /// lower room  left
-    { start: { x: 21, y: 437 }, end: { x: 64, y: 437 }, attenuation: 6, material: "marble" },
-    { start: { x: 64, y: 437 }, end: { x: 113, y: 437 }, attenuation: 6, material: "wooddoor" }, // door
-    { start: { x: 113, y: 437 }, end: { x: 506, y: 437 }, attenuation: 6, material: "marble" },
+    { start: { x: 21, y: 424 }, end: { x: 64, y: 424 }, attenuation: 3, material: "exteriorglass" },
+    { start: { x: 64, y: 424 }, end: { x: 113, y: 424 }, attenuation: 6, material: "wooddoor" }, // door
+    { start: { x: 113, y: 424 }, end: { x: 406, y: 424 }, attenuation: 3, material: "exteriorglass" },
+    { start: { x: 406, y: 424 }, end: { x: 453, y: 424 }, attenuation: 6, material: "wooddoor" }, // door
+    { start: { x: 453, y: 424 }, end: { x: 493, y: 424 }, attenuation: 3, material: "exteriorglass" },
     /// lower room right
-    { start: { x: 764, y: 427 }, end: { x: 815, y: 427 }, attenuation: 6, material: "marble" },
-    { start: { x: 815, y: 427 }, end: { x: 862, y: 427 }, attenuation: 6, material: "wooddoor" }, // door
-    { start: { x: 862, y: 427 }, end: { x: 1168, y: 427 }, attenuation: 6, material: "marble" },
-    { start: { x: 1168, y: 427 }, end: { x: 1215, y: 427 }, attenuation: 6, material: "wooddoor" }, // door
-    { start: { x: 1215, y: 427 }, end: { x: 1246, y: 427 }, attenuation: 6, material: "marble" },
+    { start: { x: 742, y: 414 }, end: { x: 792, y: 414}, attenuation: 3, material: "exteriorglass" },
+    { start: { x: 792, y: 414 }, end: { x: 837, y: 414 }, attenuation: 6, material: "wooddoor" }, // door
+    { start: { x: 837, y: 414 }, end: { x: 1136, y: 414 }, attenuation: 3, material: "exteriorglass" },
+    { start: { x: 1135, y: 414 }, end: { x: 1180, y: 414 }, attenuation: 6, material: "wooddoor" }, // door
+    { start: { x: 1180, y: 414 }, end: { x: 1211, y: 414 }, attenuation: 3, material: "exteriorglass" },
 
     // vertical
     /// upper room, left to right
-    { start: { x: 305, y: 36 }, end: { x: 305, y: 311 }, attenuation: 6, material: "concrete" },
-    { start: { x: 593, y: 36 }, end: { x: 593, y: 311 }, attenuation: 6, material: "concrete" },
-    { start: { x: 877, y: 36 }, end: { x: 877, y: 311 }, attenuation: 6, material: "concrete" },
+    { start: { x: 297, y: 36 }, end: { x: 297, y: 299 }, attenuation: 6, material: "concrete" },
+    { start: { x: 576, y: 36 }, end: { x: 576, y: 299 }, attenuation: 6, material: "concrete" },
+    { start: { x: 853, y: 36 }, end: { x: 853, y: 299 }, attenuation: 6, material: "concrete" },
     /// lower room, left to right
-    { start: { x: 506, y: 437 }, end: { x: 506, y: 793 }, attenuation: 6, material: "marble" },
-    { start: { x: 764, y: 427 }, end: { x: 764, y: 793 }, attenuation: 6, material: "marble" },
+    { start: { x: 493, y: 424 }, end: { x: 493, y: 771 }, attenuation: 3, material: "exteriorglass" },
+    { start: { x: 742, y: 414 }, end: { x: 742, y: 771 }, attenuation: 3, material: "exteriorglass" },
 
     // building wall
     /// horizontal
-    { start: { x: 21, y: 39}, end: { x: 1246, y: 39}, attenuation: 12, material: "concrete"},
-    { start: { x: 21, y: 793}, end: { x: 1246, y: 793}, attenuation: 12, material: "concrete"},
+    { start: { x: 21, y: 39}, end: { x: 1210, y: 39}, attenuation: 12, material: "concrete"},
+    { start: { x: 21, y: 770}, end: { x: 1210, y: 770}, attenuation: 12, material: "concrete"},
     /// vertical
-    { start: { x: 21, y: 39}, end: { x: 21, y: 793}, attenuation: 12, material: "concrete"},
-    { start: { x: 1246, y: 39}, end: { x: 1246, y: 793}, attenuation: 12, material: "concrete"},
+    { start: { x: 21, y: 39}, end: { x: 21, y: 770}, attenuation: 12, material: "concrete"},
+    { start: { x: 1210, y: 39}, end: { x: 1210, y: 770}, attenuation: 12, material: "concrete"},
 ];
 
 function wall_type_to_params(type_s) {
