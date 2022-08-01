@@ -11,6 +11,7 @@ var MapStatus = {
     ADD_HUMAN: 5,
     SELECT_SCALE: 6,
     SELECTING_SCALE: 7,
+    DEL_WALL: 8,
 }
 var __map_status = 0;
 var __ap_delete_range = 20 //px
@@ -194,6 +195,12 @@ function calc_distance_m(x0, y0, x1, y1, px2meter) {
 
 function calc_distance_px(x0, y0, x1, y1) {
     return calc_distance_m(x0, y0, x1, y1, 1)
+}
+
+function calc_distance_px_point2line(px, py, start_x, start_y, end_x, end_y) {
+    nom = Math.abs( (px - start_x) * (start_y - end_y) - (py - start_y) * (start_x - end_x) )
+    denom =Math.sqrt( (start_x - end_x) * (start_x - end_x) + (start_y - end_y) * (start_y - end_y) )
+    return nom / denom
 }
 
 function is_line_crossing(a, b, c, d) {
@@ -538,6 +545,36 @@ function map_click_to_add_human(x, y) {
     redraw_map()
 }
 
+function map_click_to_del_wall(x, y) {
+    del_idx = null
+    for (obstacle_idx in obstacles_list) {
+        obstacle = obstacles_list[obstacle_idx]
+        if (obstacle == null) {
+            continue
+        }
+
+        start_x = obstacle.start.x
+        start_y = obstacle.start.y
+        end_x = obstacle.end.x
+        end_y = obstacle.end.y
+
+        distM = calc_distance_px_point2line(x, y, start_x, start_y, end_x, end_y)
+        if (distM < __ap_delete_range) {
+            del_idx = obstacle_idx
+            break
+        }
+    }
+
+    console.log("del_idx: ", del_idx)
+    if (del_idx != null) {
+        obstacles_list.splice(del_idx, 1)
+    }
+
+    update_status("Deleted wall")
+    __map_status = MapStatus.NONE
+    redraw_map()
+}
+
 function get_map_mouse_coordinate(e) {
     var mapOffset = document.querySelector("canvas").getBoundingClientRect();//$("#canvas-map").getBoundingClientRect();
     mouseX = parseInt(e.clientX - mapOffset.left);
@@ -565,6 +602,8 @@ function map_click(e) {
         case MapStatus.ADD_HUMAN:
             map_click_to_add_human(mouseX, mouseY)
             break
+        case MapStatus.DEL_WALL:
+            map_click_to_del_wall(mouseX, mouseY)
         default:
             break;
     }
@@ -705,6 +744,11 @@ function add_wall(e) {
     __map_status = MapStatus.ADD_WALL
 }
 
+function del_wall(e) {
+    update_status("click to delete wall")
+    __map_status = MapStatus.DEL_WALL;
+}
+
 function clear_wall(e) {
     update_status("cleared all wall")
     obstacles_list = []
@@ -812,6 +856,7 @@ $("#button-clear-ap").click(function(e) { clear_ap(e); })
 $("#button-add-ap").click(function(e) { add_ap(e); })
 $("#button-del-ap").click(function(e) { del_ap(e); })
 $("#button-add-wall").click(function(e) { add_wall(e); })
+$("#button-del-wall").click(function(e) { del_wall(e); })
 $("#button-clear-wall").click(function(e) { clear_wall(e); })
 $("#button-add-human").click(function(e) { add_human_body(e); })
 $("#select-freq-type").change(function(e) { change_freqhz(e); })
