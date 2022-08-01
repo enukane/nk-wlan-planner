@@ -74,6 +74,14 @@ var obstacles_list = [
     /// lower room, left to right
     { start: { x: 506, y: 437 }, end: { x: 506, y: 793 }, attenuation: 6, material: "marble" },
     { start: { x: 764, y: 427 }, end: { x: 764, y: 793 }, attenuation: 6, material: "marble" },
+
+    // building wall
+    /// horizontal
+    { start: { x: 21, y: 39}, end: { x: 1246, y: 39}, attenuation: 12, material: "concrete"},
+    { start: { x: 21, y: 793}, end: { x: 1246, y: 793}, attenuation: 12, material: "concrete"},
+    /// vertical
+    { start: { x: 21, y: 39}, end: { x: 21, y: 793}, attenuation: 12, material: "concrete"},
+    { start: { x: 1246, y: 39}, end: { x: 1246, y: 793}, attenuation: 12, material: "concrete"},
 ];
 
 function wall_type_to_params(type_s) {
