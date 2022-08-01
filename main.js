@@ -974,3 +974,15 @@ for (const [key, pattern] of Object.entries(AntennaPatterns)) {
     let opt = $('<option>').val(key).text(pattern.name)
     $("#ap-param-antenna-type").append(opt)
 }
+
+// color table
+for (const idx in dBPower2colors) {
+    let db2color = dBPower2colors[idx]
+    let td = $('<td>').css("background", db2color[1]).css("color", "white").text("> " + db2color[0])
+    $("#tr-powerdb-colorbar").append(td)
+}
+for (const idx in attdb2color) {
+    let db2color = attdb2color[idx]
+    let td = $('<td>').css("background", db2color[1]).css("color", "white").text(db2color[0] - 1)
+    $("#tr-obstacles-attdb-colorbar").append(td)
+}

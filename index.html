@@ -16,6 +16,27 @@
         <h1>Map</h1>
         <p><a href="https://github.com/enukane/nk-wlan-planner">View the project on GitHub</a></p>
         <canvas id="canvas-map" width="1280" height="800"></canvas>
+        <div class="row">
+            <label>Power [dBm]</label>
+        </div>
+        <div class="row">
+            <table class="table">
+                <tbody>
+                    <tr id="tr-powerdb-colorbar"></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="row">
+            <label>Attenuation [dBm]</label>
+        </div>
+        <div class="row">
+            <table class="table">
+                <tbody>
+                    <tr id="tr-obstacles-attdb-colorbar"></tr>
+                </tbody>
+            </table>
+
+        </div>
         <div id="map-status" class="alert alert-primary" role="alert">
             Press Button to operate
         </div>
