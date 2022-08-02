@@ -12,8 +12,10 @@ var MapStatus = {
     SELECT_SCALE: 6,
     SELECTING_SCALE: 7,
     DEL_WALL: 8,
+    MODIFY_AP: 9,
 }
 var __map_status = 0;
+const AP_SELECT_RANGE = 20 // px
 var __ap_delete_range = 20 //px
 var __default_status = "Press Button to operate"
 var __shoulder_width_m = 0.43 //[m]
@@ -22,6 +24,7 @@ var __working_wall_coordinates = null;
 
 var __selecting_scale = null;
 
+var __ap_idx_selected = null;
 
 var background_image = new Image();
 var __map_file_name = background_image.src = "map.png";
@@ -30,6 +33,7 @@ var __frequency = 5180 * 1000 * 1000;
 var AntennaPatterns = {
     STEEP0: {
         base: "",
+        key: "STEEP0",
         name: "0 dBi Directional",
         peak_db: 0,
         resolution: 10, bias_map: [
@@ -43,6 +47,7 @@ var AntennaPatterns = {
     ]},
     DIRPATCH0: {
         base: "WLE-HG-DA",
+        key: "DIRPATCH0",
         name: "9dBi Directional Half-angle 65+5", 
         peak_db: 9,
         resolution: 10,
@@ -58,6 +63,7 @@ var AntennaPatterns = {
     },
     DIRPATCH1: {
         base: "CANT9103",
+        key: "DIRPATCH1",
         name: "6dBi Directional Half-angle 70",
         peak_db: 0, // included
         resolution: 10,
@@ -483,6 +489,15 @@ function draw_obstacles(obstacles) {
     }
 }
 
+function draw_circle(x, y, range) {
+    __ctx.beginPath()
+    __ctx.arc(x, y, range, 0 * Math.PI / 180, 360 * Math.PI / 180, false)
+    __ctx.fillStyle = "black"
+    __ctx.fill();
+    __ctx.stroke()
+
+}
+
 function draw_line(x0, y0, x1, y1) {
     __ctx.beginPath();
     __ctx.moveTo(x0, y0);
@@ -600,6 +615,50 @@ function map_click_to_add_ap(x, y) {
     redraw_map()
 }
 
+function find_ap_in_range_from_coordination(x, y, range) {
+    let found_idx = null
+    for (let ap_idx in appos_list) {
+        let ap = appos_list[ap_idx]
+        if (ap == null) {
+            continue
+        }
+
+        let distM = calc_distance_px(x, y, ap.x, ap.y)
+        if (distM < range) {
+            found_idx = ap_idx
+            break
+        }
+    }
+
+    return found_idx
+}
+
+function map_click_to_modify_ap(x, y) {
+    let idx = find_ap_in_range_from_coordination(x, y, AP_SELECT_RANGE)
+    if (idx == null) {
+        update_status("AP out of range, done selecting");
+        return;
+    }
+
+    let ap = appos_list[idx];
+    draw_text_centered(ap.x, ap.y, 50, "▲")
+
+    __ap_idx_selected = idx;
+    let powerdb = ap.powerdb;
+    let direction = ap.direction
+
+    $("#ap-param-powerdb").val(powerdb)
+    if (direction) {
+        $("#ap-param-antenna-type").val(direction.pattern.key)
+        $("#ap-param-antenna-angle").val(direction.degree)
+    }
+
+    $("#button-apply-ap-param").prop("disabled", false)
+
+    update_status("modify AP parameters and press Apply button")
+    __map_status = MapStatus.NONE
+}
+
 function map_click_to_del_ap(x, y) {
     del_idx = null
     for (ap_idx in appos_list) {
@@ -699,6 +758,9 @@ function map_click(e) {
             break;
         case MapStatus.ADD_AP:
             map_click_to_add_ap(mouseX, mouseY)
+            break;
+        case MapStatus.MODIFY_AP:
+            map_click_to_modify_ap(mouseX, mouseY)
             break;
         case MapStatus.DEL_AP:
             map_click_to_del_ap(mouseX, mouseY)
@@ -838,9 +900,38 @@ function add_ap(e) {
     __map_status = MapStatus.ADD_AP
 }
 
+function modify_ap(e) {
+    update_status("click on map to select AP")
+    __map_status = MapStatus.MODIFY_AP
+}
+
 function del_ap(e) {
     update_status("click on map to delete AP")
     __map_status = MapStatus.DEL_AP
+}
+
+function apply_ap(e) {
+    if(__ap_idx_selected == null) {
+        return;
+    }
+
+    appos_list[__ap_idx_selected].powerdb = parseInt($("#ap-param-powerdb").val())
+    let pattern = $("#ap-param-antenna-type").val()
+    if (pattern != 0) {
+        let degree = $("#ap-param-antenna-angle").val()
+        appos_list[__ap_idx_selected].direction = {
+            degree: degree,
+            pattern: AntennaPatterns[pattern],
+        }
+    } else {
+        appos_list[__ap_idx_selected].direction = null
+    }
+
+    __ap_idx_selected = null
+
+    $("#button-apply-ap-param").prop("disabled", true)
+
+    redraw_map()
 }
 
 function add_wall(e) {
@@ -958,7 +1049,9 @@ $("#canvas-map").mousedown(function (e) { map_mousedown(e); })
 $("#canvas-map").mouseup(function (e) { map_mouseup(e); })
 $("#button-clear-ap").click(function(e) { clear_ap(e); })
 $("#button-add-ap").click(function(e) { add_ap(e); })
+$("#button-modify-ap").click(function(e) { modify_ap(e); })
 $("#button-del-ap").click(function(e) { del_ap(e); })
+$("#button-apply-ap-param").click(function(e) { apply_ap(e); })
 $("#button-add-wall").click(function(e) { add_wall(e); })
 $("#button-del-wall").click(function(e) { del_wall(e); })
 $("#button-clear-wall").click(function(e) { clear_wall(e); })
@@ -971,7 +1064,7 @@ $("#button-config-upload").on('change', function(e) { change_config(e); })
 
 // add option of antenna
 for (const [key, pattern] of Object.entries(AntennaPatterns)) {
-    let opt = $('<option>').val(key).text(pattern.name)
+    let opt = $('<option>').val(pattern.key).text(pattern.name)
     $("#ap-param-antenna-type").append(opt)
 }
 
