@@ -247,8 +247,8 @@ function calc_distance_px(x0, y0, x1, y1) {
 }
 
 function calc_distance_px_point2line(px, py, start_x, start_y, end_x, end_y) {
-    nom = Math.abs( (px - start_x) * (start_y - end_y) - (py - start_y) * (start_x - end_x) )
-    denom =Math.sqrt( (start_x - end_x) * (start_x - end_x) + (start_y - end_y) * (start_y - end_y) )
+    nom = Math.abs( (end_x - start_x) * (start_y - py) - (start_x - px ) * (end_y - start_y) )
+    denom = Math.sqrt ( Math.pow(end_x - start_x, 2) + Math.pow(end_y - start_y, 2) )
     return nom / denom
 }
 
