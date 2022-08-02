@@ -932,6 +932,8 @@ function apply_ap(e) {
     $("#button-apply-ap-param").prop("disabled", true)
 
     redraw_map()
+
+    update_status("AP parameters updated")
 }
 
 function add_wall(e) {
