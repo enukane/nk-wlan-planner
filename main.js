@@ -31,10 +31,42 @@ var __map_file_name = background_image.src = "map.png";
 
 var __frequency = 5180 * 1000 * 1000;
 var AntennaPatterns = {
+    FRONT0: {
+        base: "MistAP33_5120M_R0_phi90",
+        key: "FRONT0",
+        name: "8dBi Directional (half-angle 200)",
+        peak_db: 0,
+        resolution: 10,
+        bias_map:  [
+            8, 8, 8,
+            5, 5, 5,
+            5, 5, 5,
+            5, 5, 0,
+            -3, -5, -2,
+            -3, -3, -5,
+            -5
+        ]
+    },
+    FRONT1: {
+        base: "C9130AXI_5GHz",
+        key: "FRONT1",
+        name: "5dBi near-Omnidirectional",
+        peak_db: 0,
+        resolution: 10,
+        bias_map: [
+            0, 0, 3,
+            3, 5, 3,
+            3, 2, 1,
+            0, -1, -2,
+            -3, -3, -5,
+            -5 -5, -7,
+            -8
+        ]
+    },
     STEEP0: {
         base: "",
         key: "STEEP0",
-        name: "0 dBi Directional",
+        name: "0 dBi Directional (half-angle 60)",
         peak_db: 0,
         resolution: 10, bias_map: [
         0, -0.2, -1,    // 0, 10, 20
@@ -48,7 +80,7 @@ var AntennaPatterns = {
     DIRPATCH0: {
         base: "WLE-HG-DA",
         key: "DIRPATCH0",
-        name: "9dBi Directional Half-angle 65+5", 
+        name: "9dBi Directional (Half-angle 65)",
         peak_db: 9,
         resolution: 10,
         bias_map: [
@@ -64,7 +96,7 @@ var AntennaPatterns = {
     DIRPATCH1: {
         base: "CANT9103",
         key: "DIRPATCH1",
-        name: "6dBi Directional Half-angle 70",
+        name: "6dBi Directional (half-angle 70)",
         peak_db: 0, // included
         resolution: 10,
         bias_map: [
