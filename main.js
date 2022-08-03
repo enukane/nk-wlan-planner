@@ -1078,6 +1078,19 @@ function change_config(e) {
 
 }
 
+function download_image(e) {
+    let download_link = document.createElement("a")
+    let fname = "map_" + String(Date.now()) + ".png"
+    download_link.setAttribute("download", fname)
+
+    let canvas = document.getElementById("canvas-map")
+    canvas.toBlob(function(blob) {
+        let url = URL.createObjectURL(blob)
+        download_link.setAttribute("href", url)
+        download_link.click()
+    })
+}
+
 $("#canvas-map").click(function (e) { map_click(e); })
 $("#canvas-map").mousedown(function (e) { map_mousedown(e); })
 $("#canvas-map").mouseup(function (e) { map_mouseup(e); })
@@ -1095,6 +1108,7 @@ $("#button-select-scale").click(function(e) { select_scale(e); })
 $("#button-image-upload").on('change', function(e) { change_image(e); })
 $("#button-download").click(function (e) { download_clicked(e); })
 $("#button-config-upload").on('change', function(e) { change_config(e); })
+$("#button-image-download").click(function(e) { download_image(e); })
 
 // add option of antenna
 for (const [key, pattern] of Object.entries(AntennaPatterns)) {
