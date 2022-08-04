@@ -991,7 +991,7 @@ function map_mouseup(e) {
             __selecting_scale.end.x = xy.x
             __selecting_scale.end.y = xy.y
 
-            let meter = calc_distance_m(
+            let m = calc_distance_m(
                 __selecting_scale.start.x,
                 __selecting_scale.start.y,
                 xy.x,
@@ -999,7 +999,7 @@ function map_mouseup(e) {
                 __px2meter
             )
 
-            update_status("selected length is " + meter.toFixed(1) + " [m]")
+            update_status("selected length is " + m.toFixed(1) + " [m]")
             __selecting_scale = null
             __map_status = MapStatus.NONE
             break;
