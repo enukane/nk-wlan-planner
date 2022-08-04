@@ -1191,3 +1191,14 @@ for (const idx in attdb2color) {
     let td = $('<td>').css("background", db2color[1]).css("color", "white").text(db2color[0] - 1)
     $("#tr-obstacles-attdb-colorbar").append(td)
 }
+
+// jquery.knob
+$(function() {
+    $(".dial").knob({
+        step: 1,
+        min: -180,
+        max: 180,
+        angleOffset: -90,
+        height: 100,
+    });
+})
