@@ -34,7 +34,7 @@ var AntennaPatterns = {
     FRONT0: {
         base: "MistAP33_5120M_R0_phi90",
         key: "FRONT0",
-        name: "8dBi Directional (half-angle 200)",
+        name: "8dBi Directional (MistAP33)",
         peak_db: 0,
         resolution: 10,
         bias_map:  [
@@ -50,7 +50,7 @@ var AntennaPatterns = {
     FRONT1: {
         base: "C9130AXI_5GHz",
         key: "FRONT1",
-        name: "5dBi near-Omnidirectional",
+        name: "5dBi Directional (C9130AXI)",
         peak_db: 0,
         resolution: 10,
         bias_map: [
@@ -61,6 +61,70 @@ var AntennaPatterns = {
             -3, -3, -5,
             -5 -5, -7,
             -8
+        ]
+    },
+    FRONT2: {
+        base: "EAP620HD_5.25GHz",
+        key: "FRONT2",
+        name: "5dBi Directional (EAP620HD)",
+        peak_db: 0,
+        resolution: 10,
+        bias_map: [
+            -9, -7.5, -7.5,
+            -5, -1, -1,
+            -1, -1, -1,
+            -1, -1, -3
+            -5, -7.5, -10,
+            -7.5, -7, -8,
+            -1, -1
+        ]
+    },
+    FRONT3: {
+        base: "WA6638_Radio1_5GHz",
+        key: "FRONT3",
+        name: "5dBi Directional (WA6638)",
+        peak_db: 0,
+        resolution: 10,
+        bias_map: [
+            -2.5, -2.5, -1.25
+            -4, -1, 0,
+            1, -2, -5
+            -10, -13, -10,
+            -12, -11, -11,
+            -12, -11, -11,
+            -11, -11
+        ]
+    },
+    ARUBA550: {
+        base: "ARUBA550_5.18GHz",
+        key: "ARUBA550",
+        name: "5dBi Directional (AP550)",
+        peak_db: 0,
+        resolution: 10,
+        bias_map: [
+            -10, -7, -4,
+            -2, 0, -1,
+            0, 1, 0,
+            -2, -4, -5
+            -7, -8, -9,
+            -10, -12, -13,
+            -22, -22
+        ]
+    },
+    AP460C: {
+        base: "Extreme_AP460C_RADIO1_5GHz",
+        key: "AP460C",
+        name: "3.5dBi AP460C",
+        peak_db: 0,
+        resolution: 10,
+        bias_map: [
+            0, 1, 1,
+            0, 0, 3,
+            3, 3, 2,
+            0, -3, -5,
+            -8, -8, -9,
+            -9, -9, -8,
+            -7.5, -7.5
         ]
     },
     STEEP0: {
@@ -80,7 +144,7 @@ var AntennaPatterns = {
     DIRPATCH0: {
         base: "WLE-HG-DA",
         key: "DIRPATCH0",
-        name: "9dBi Directional (Half-angle 65)",
+        name: "9dBi Directional (WLE-HG-DA)",
         peak_db: 9,
         resolution: 10,
         bias_map: [
@@ -96,7 +160,7 @@ var AntennaPatterns = {
     DIRPATCH1: {
         base: "CANT9103",
         key: "DIRPATCH1",
-        name: "6dBi Directional (half-angle 70)",
+        name: "6dBi Directional (CANT9103)",
         peak_db: 0, // included
         resolution: 10,
         bias_map: [
