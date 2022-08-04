@@ -13,6 +13,8 @@ var MapStatus = {
     SELECTING_SCALE: 7,
     DEL_WALL: 8,
     MODIFY_AP: 9,
+    MEASURE_SCALE: 10,
+    MEASURING_SCALE: 11,
 }
 var __map_status = 0;
 const AP_SELECT_RANGE = 20 // px
@@ -937,6 +939,13 @@ function map_mousedown(e) {
             __selecting_scale.start.x = xy.x
             __selecting_scale.start.y = xy.y
             __map_status = MapStatus.SELECTING_SCALE
+            break;
+        case MapStatus.MEASURE_SCALE:
+            __selecting_scale = new_scale();
+            __selecting_scale.start.x = xy.x
+            __selecting_scale.start.y = xy.y
+            __map_status = MapStatus.MEASURING_SCALE
+            break;
         default:
             break;
     }
@@ -977,6 +986,22 @@ function map_mouseup(e) {
             __map_status = MapStatus.NONE
             redraw_map();
             update_status(__default_status);
+            break;
+        case MapStatus.MEASURING_SCALE:
+            __selecting_scale.end.x = xy.x
+            __selecting_scale.end.y = xy.y
+
+            let meter = calc_distance_m(
+                __selecting_scale.start.x,
+                __selecting_scale.start.y,
+                xy.x,
+                xy.y,
+                __px2meter
+            )
+
+            update_status("selected length is " + meter.toFixed(1) + " [m]")
+            __selecting_scale = null
+            __map_status = MapStatus.NONE
             break;
         default:
             break;
@@ -1062,6 +1087,11 @@ function change_freqhz(e) {
 function select_scale(e) {
     update_status("drag to select scale [m]")
     __map_status = MapStatus.SELECT_SCALE
+}
+
+function measure_scale(e) {
+    update_status("drag to measure scale [m]")
+    __map_status = MapStatus.MEASURE_SCALE
 }
 
 function change_image(e) {
@@ -1169,6 +1199,7 @@ $("#button-clear-wall").click(function(e) { clear_wall(e); })
 $("#button-add-human").click(function(e) { add_human_body(e); })
 $("#select-freq-type").change(function(e) { change_freqhz(e); })
 $("#button-select-scale").click(function(e) { select_scale(e); })
+$("#button-measure-scale").click(function(e) { measure_scale(e); })
 $("#button-image-upload").on('change', function(e) { change_image(e); })
 $("#button-download").click(function (e) { download_clicked(e); })
 $("#button-config-upload").on('change', function(e) { change_config(e); })
