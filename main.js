@@ -175,6 +175,22 @@ var AntennaPatterns = {
             -25
         ]
     },
+    DIRPATCH2: {
+        base: "ANT-4x4-5314",
+        key: "DIRPATCH2",
+        name: "14dBi Directional (ANT-4x4-5314)",
+        peak_db: 14,
+        resolution: 10,
+        bias_map: [
+            0, -2, -5, //0
+            -9, -20, -30, //30
+            -29, -28, -30, //60
+            -33, -37, -35, //90
+            -38, -37, -40, //120
+            -40, -40, -40, //150
+            -40, -40 //1808
+        ]
+    }
 }
     
 var appos_list = [
