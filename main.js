@@ -15,6 +15,9 @@ var MapStatus = {
     MODIFY_AP: 9,
     MEASURE_SCALE: 10,
     MEASURING_SCALE: 11,
+    ADD_COVERAGE: 12,
+    ADDING_COVERAGE: 13,
+    DEL_COVERAGE: 14,
 }
 var __map_status = 0;
 const AP_SELECT_RANGE = 20 // px
@@ -30,6 +33,9 @@ var __ap_idx_selected = null;
 
 var background_image = new Image();
 var __map_file_name = background_image.src = "map.png";
+
+var __coverage_list = []
+var COVERAGE_THRESHOLD_DB = -55
 
 var __frequency = 5180 * 1000 * 1000;
 var AntennaPatterns = {
@@ -387,6 +393,13 @@ function is_line_crossing(a, b, c, d) {
     return true;
 }
 
+function is_point_in_rect(px, py, rect_x, rect_y, w, h) {
+    if ((rect_x <= px && px <= (rect_x + w)) && (rect_y <= py && py <= (rect_y + h))) {
+        return true
+    }
+    return false
+}
+
 function calc_obstacles_attenuation_db(pos, apPos, obstacles) {
     attdB = 0.0
     for (let idx in obstacles) {
@@ -441,7 +454,20 @@ function calc_directional_power_db_of_ap_to_xy(ap, xp, yp) {
     return appowerdb + ap.direction.pattern.peak_db + biasdb
 }
 
+function reset_coverage_eval(coverages) {
+    for (idx in coverages) {
+        coverages[idx].eval = {
+            count: 0,
+            sum: 0,
+            shortfall: 0,
+        }
+    }
+
+}
+
 function update_matrix(matrix, appos_list, obstacles, px2meter, frequency) {
+    reset_coverage_eval(__coverage_list);
+
     for (y = 0; y < matrix.length; y++) {
         for (x = 0; x < matrix[y].length; x++) {
             cur_pos = calc_real_point(x, y)
@@ -469,9 +495,21 @@ function update_matrix(matrix, appos_list, obstacles, px2meter, frequency) {
                 }
             }
 
+            // coverage check
+            for (cv_idx in __coverage_list) {
+                let coverage = __coverage_list[cv_idx]
+                if (!is_point_in_rect(cur_pos[0], cur_pos[1], coverage.start.x, coverage.start.y, coverage.width, coverage.height)) {
+                    continue
+                }
+
+                coverage.eval.count += 1
+                coverage.eval.sum += matrix[y][x]
+                if (matrix[y][x] < COVERAGE_THRESHOLD_DB) {
+                    coverage.eval.shortfall += 1
+                }
+            }
         }
     }
-
 }
 
 //function iterativeUpdatedBPower(matrix, xBox, yBox, dBPower, px2meter, freqHz) {
@@ -603,6 +641,25 @@ function draw_obstacles(obstacles) {
     }
 }
 
+function draw_coverages(__coverage_list) {
+    let canvas = document.getElementById("canvas-map");
+    let ctx = canvas.getContext("2d");
+    for (idx in __coverage_list) {
+        let coverage = __coverage_list[idx]
+        let start = coverage.start
+        let w = coverage.width;
+        let h = coverage.height
+
+        ctx.fillStyle = 'aqua'
+        ctx.globalAlpha=0.05
+        console.log(start.x, start.y, w, h)
+        ctx.fillRect(start.x, start.y, w, h)
+        ctx.globalAlpha=0.8
+        ctx.strokeStyle = 'aqua'
+        ctx.strokeRect(start.x, start.y, w, h)
+    }
+}
+
 function draw_circle(x, y, range) {
     __ctx.beginPath()
     __ctx.arc(x, y, range, 0 * Math.PI / 180, 360 * Math.PI / 180, false)
@@ -636,6 +693,17 @@ function draw_scale(px2meter) {
 
     meter_for_50px = (50 * __px2meter).toFixed(1)
     draw_text_centered(50, 15, 50, meter_for_50px + " m")
+
+}
+
+function update_coverages_score(coverages) {
+    let str = ""
+    for (let idx in coverages) {
+        let coverage = coverages[idx]
+        let perc = ((coverage.eval.count - coverage.eval.shortfall) / coverage.eval.count * 100)
+        str = str + perc.toFixed(1) + "% "
+    }
+    $("#coverage-status").text("Coverage Evaluation: " + str)
 
 }
 
@@ -690,6 +758,10 @@ function redraw_map() {
     draw_obstacles(obstacles_list);
 
     draw_scale(__px2meter)
+
+    draw_coverages(__coverage_list)
+
+    update_coverages_score(__coverage_list)
 }
 
 background_image.onload = function () {
@@ -698,6 +770,34 @@ background_image.onload = function () {
 
 function update_status(text) {
     $("#map-status").text(text)
+}
+
+function add_new_coverage(start, end) {
+    let start_x = start.x
+    let end_x = end.x
+    let start_y = start.y
+    let end_y = end.y
+    if (start.x > end.x) {
+        start_x = end.x
+        end_x = start.x
+    } 
+    if (start.y > end.y) {
+        start_y = end.y
+        end_y = start.y
+    }
+
+    let w = end_x - start_x
+    let h = end_y - start_y
+    __coverage_list.unshift(
+        {
+            start: {
+                x: start_x,
+                y: start_y,
+            },
+            width: w,
+            height: h,
+        }
+    )
 }
 
 /* event handler */
@@ -791,7 +891,7 @@ function map_click_to_del_ap(x, y) {
     console.log("del_idx:", del_idx)
     if (del_idx != null) {
         appos_list.splice(del_idx, 1)
-    }
+    } 
     
     __map_status = MapStatus.NONE;
     update_status("AP deleted")
@@ -852,6 +952,32 @@ function map_click_to_del_wall(x, y) {
     redraw_map()
 }
 
+function map_click_to_del_coverage(x, y) {
+    let del_idx = null
+    for (idx in __coverage_list) {
+        coverage = __coverage_list[idx]
+        if (coverage == null) {
+            continue
+        }
+
+        if (is_point_in_rect(x, y, coverage.start.x, coverage.start.y, coverage.width, coverage.height)) {
+            del_idx = idx
+            break
+        }
+    }
+
+    if (del_idx != null) {
+        __coverage_list.splice(del_idx, 1)
+        update_status("coverage deleted")
+    } else {
+        update_status("no matching coverage to delete")
+    }
+
+    __map_status = MapStatus.NONE;
+
+    redraw_map()
+}
+
 function get_map_mouse_coordinate(e) {
     var mapOffset = document.querySelector("canvas").getBoundingClientRect();//$("#canvas-map").getBoundingClientRect();
     mouseX = parseInt(e.clientX - mapOffset.left);
@@ -884,6 +1010,10 @@ function map_click(e) {
             break
         case MapStatus.DEL_WALL:
             map_click_to_del_wall(mouseX, mouseY)
+            break
+        case MapStatus.DEL_COVERAGE:
+            map_click_to_del_coverage(mouseX, mouseY)
+            break
         default:
             break;
     }
@@ -962,6 +1092,12 @@ function map_mousedown(e) {
             __selecting_scale.start.y = xy.y
             __map_status = MapStatus.MEASURING_SCALE
             break;
+        case MapStatus.ADD_COVERAGE:
+            __selecting_scale = new_scale()
+            __selecting_scale.start.x = xy.x
+            __selecting_scale.start.y = xy.y
+            __map_status = MapStatus.ADDING_COVERAGE
+            break
         default:
             break;
     }
@@ -1016,6 +1152,20 @@ function map_mouseup(e) {
             )
 
             update_status("selected length is " + m.toFixed(1) + " [m]")
+            __selecting_scale = null
+            __map_status = MapStatus.NONE
+            break;
+        case MapStatus.ADDING_COVERAGE:
+            __selecting_scale.end.x = xy.x
+            __selecting_scale.end.y = xy.y
+
+            add_new_coverage(
+                __selecting_scale.start,
+                __selecting_scale.end
+            )
+
+            redraw_map()
+            update_status("added coverage")
             __selecting_scale = null
             __map_status = MapStatus.NONE
             break;
@@ -1133,6 +1283,16 @@ function change_image(e) {
     reader.readAsDataURL(file)
 }
 
+function add_coverage(e) {
+    update_status("drag to add coverage")
+    __map_status = MapStatus.ADD_COVERAGE
+}
+
+function del_coverage(e) {
+    update_status("click map to delete coverage")
+    __map_status = MapStatus.DEL_COVERAGE
+}
+
 function download_clicked() {
     let config_obj = {
         ap: appos_list,
@@ -1217,6 +1377,8 @@ $("#select-freq-type").change(function(e) { change_freqhz(e); })
 $("#button-select-scale").click(function(e) { select_scale(e); })
 $("#button-measure-scale").click(function(e) { measure_scale(e); })
 $("#button-image-upload").on('change', function(e) { change_image(e); })
+$("#button-add-coverage").click(function (e) { add_coverage(e) })
+$("#button-del-coverage").click(function (e) { del_coverage(e) })
 $("#button-download").click(function (e) { download_clicked(e); })
 $("#button-config-upload").on('change', function(e) { change_config(e); })
 $("#button-image-download").click(function(e) { download_image(e); })
