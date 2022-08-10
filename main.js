@@ -135,6 +135,22 @@ var AntennaPatterns = {
             -7.5, -7.5
         ]
     },
+    AE6761: {
+        base: "Huawe_AirEngine_6761-21_5Ghz_Vertical",
+        key: "AE6761",
+        name: "5.5 dBi AE6761-21",
+        peak_db: 5.5,
+        resolution: 10,
+        bias_map: [
+            -8, -7, -2,
+            0, -2, -3,
+            -3, -3, -3,
+            -5, -7, -10,
+            -15, -12, -17,
+            -15, -20, -16,
+            -17, -17
+        ]
+    },
     STEEP0: {
         base: "",
         key: "STEEP0",
