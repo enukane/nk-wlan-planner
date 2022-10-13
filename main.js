@@ -18,6 +18,8 @@ var MapStatus = {
     ADD_COVERAGE: 12,
     ADDING_COVERAGE: 13,
     DEL_COVERAGE: 14,
+    ADD_SQUARED_WALL: 15,
+    ADDING_SQUARED_WALL: 16,
 }
 var __map_status = 0;
 const AP_SELECT_RANGE = 20 // px
@@ -1035,6 +1037,36 @@ function map_click(e) {
     }
 }
 
+function add_squared_wall_to_list(wall_coordinates, list)
+{
+    let p0 = wall_coordinates.start
+    let p1 = wall_coordinates.end
+    // patterns:　(x0, y0) to (x1, y1)
+    //   up:    (x0, y0) - (x1, y0) 
+    //   left:  (x0, y0) - (x0, y1)
+    //   right: (x1, y0) - (x1, y1)
+    //   bottom:(x0, y1) - (x1, y1)
+
+    let patterns = [
+        { start: {x: p0.x, y: p0.y }, end: {x: p1.x, y: p0.y }},
+        { start: {x: p0.x, y: p0.y }, end: {x: p0.x, y: p1.y }},
+        { start: {x: p1.x, y: p0.y }, end: {x: p1.x, y: p1.y }},
+        { start: {x: p0.x, y: p1.y }, end: {x: p1.x, y: p1.y }},
+    ]
+
+    for (let idx in patterns) {
+        let wall = new_wall()
+        wall.attenuation = wall_coordinates.attenuation
+        wall.material = wall_coordinates.material
+
+        wall.start = patterns[idx].start
+        wall.end = patterns[idx].end
+
+        list.push(wall)
+        wall = null
+    }
+}
+
 function new_wall() {
     return {
         start: {
@@ -1096,6 +1128,18 @@ function map_mousedown(e) {
 
             __map_status = MapStatus.ADDING_WALL
             break;
+        case MapStatus.ADD_SQUARED_WALL:
+            __working_wall_coordinates = new_wall();
+            __working_wall_coordinates.start.x = xy.x
+            __working_wall_coordinates.start.y = xy.y
+            type_s = get_selected_wall_type()
+            param = wall_type_to_params(type_s)
+            console.log(param)
+            __working_wall_coordinates.attenuation = param.attenuation
+            __working_wall_coordinates.material = param.type
+
+            __map_status = MapStatus.ADDING_SQUARED_WALL
+            break
         case MapStatus.SELECT_SCALE:
             __selecting_scale = new_scale()
             __selecting_scale.start.x = xy.x
@@ -1136,6 +1180,15 @@ function map_mouseup(e) {
             redraw_map();
             update_status(__default_status)
             break;
+        case MapStatus.ADDING_SQUARED_WALL:
+            __working_wall_coordinates.end.x = xy.x
+            __working_wall_coordinates.end.y = xy.y
+            add_squared_wall_to_list(__working_wall_coordinates, obstacles_list)
+            __working_wall_coordinates = null
+            __map_status = MapStatus.NONE
+            redraw_map()
+            update_status(__default_status)
+            break
         case MapStatus.SELECTING_SCALE:
             __selecting_scale.end.x = xy.x
             __selecting_scale.end.y = xy.y
@@ -1242,6 +1295,11 @@ function apply_ap(e) {
 function add_wall(e) {
     update_status("drag to draw wall")
     __map_status = MapStatus.ADD_WALL
+}
+
+function add_squared_wall(e) {
+    update_status("drat to draw square of wall")
+    __map_status = MapStatus.ADD_SQUARED_WALL
 }
 
 function del_wall(e) {
@@ -1386,6 +1444,7 @@ $("#button-modify-ap").click(function(e) { modify_ap(e); })
 $("#button-del-ap").click(function(e) { del_ap(e); })
 $("#button-apply-ap-param").click(function(e) { apply_ap(e); })
 $("#button-add-wall").click(function(e) { add_wall(e); })
+$("#button-add-square").click(function(e) {add_squared_wall(e); })
 $("#button-del-wall").click(function(e) { del_wall(e); })
 $("#button-clear-wall").click(function(e) { clear_wall(e); })
 $("#button-add-human").click(function(e) { add_human_body(e); })
