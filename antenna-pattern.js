@@ -9,6 +9,8 @@ var __status = Status.NONE
 
 var __base_image = new Image()
 
+var __rotation_deg = 0
+
 var __config = {
 }
 
@@ -48,9 +50,14 @@ function redraw_canvas() {
     canvas_img_w = img_w * fit_rate
     canvas_img_h = img_h * fit_rate
 
-    ctx.drawImage(__base_image,
-        0, 0, __base_image.width, __base_image.height,
-        0, 0, canvas_img_w, canvas_img_h)
+    ctx.save();
+    ctx.translate(__base_image.width / 2, __base_image.height / 2);
+    ctx.rotate(__rotation_deg * (Math.PI / 180))
+    ctx.drawImage(__base_image, -(__base_image.width / 2), -(__base_image.height/2))
+    //ctx.drawImage(__base_image,
+    //    0, 0, __base_image.width, __base_image.height,
+    //    0, 0, canvas_img_w, canvas_img_h)
+    ctx.restore()
 
     if (__config.center != null && __config.center.xy != null) {
         draw_circle(__config.center.xy, 5, "black")
@@ -215,6 +222,12 @@ function change_image(e) {
 
 }
 
+function rotate_image(e) {
+    __rotation_deg = (__rotation_deg + 90) % 360
+
+    redraw_canvas()
+}
+
 function selecting_center (e) {
     __status = Status.SELECTING_CENTER
 }
@@ -233,6 +246,7 @@ function end_selecting_point(e) {
 
 $("#canvas-ant").click(function(e) { canvas_click(e) })
 $("#button-load-img").on("change", function(e) { change_image(e) })
+$("#button-rotate").click(function(e) { rotate_image(e)})
 $("#button-select-center").click(function(e) { selecting_center(e) })
 $("#button-select-edge").click(function(e) { selecting_edge(e) })
 $("#button-start-point").click(function(e) { start_selecting_point(e) })

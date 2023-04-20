@@ -27,20 +27,27 @@
                     <div class="card-body">
                         <h5 class="card-title">Image</h5>
                         <input id="button-load-img" type="file"></input>
+                        <button id="button-rotate" type="button" class="btn btn-primary">Rotate (Right)</button>
                     </div>
                     <div class="card-body">
                         <h5 class="card-title">Scale</h5>
+                        <h6>Minimum dB</h4>
                         <input id="text-center-db" class="form-control" type="text" placeholder="center gain in dB" value="-35">
                         <button id="button-select-center" type="button" class="btn btn-primary">Select Center</button>
+
+                        <h6>Maximum dB</h4>
                         <input id="text-edge-db" class="form-control" type="text" placeholder="edge gain in dB" value="5">
                         <button id="button-select-edge" type="button" class="btn btn-primary">Select Edge</button>
 
+                        <h6>Plot</h6>
                         <button id="button-start-point" type="button" class="btn btn-primary">Start Selecting Point</button>
                         <button id="button-undo-point" type="button" class="btn btn-warning">Undo Last Point</button>
                         <button id="button-end-point" type="button" class="btn btn-primary">End Selecting Point</button>
                     </div>
                     <div class="card-body">
-                        <button id="button-calc-"
+                        <h5 class="card-title">Result</h5>
+                        <textarea id="textarea-result" rows="20" cols="80"></textarea>
+                        <button id="button-copy" type="button" class="btn btn-primary">copy</button>
                     </div>
                 </div>
             </div>
