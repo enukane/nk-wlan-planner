@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="jp">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+</head>
+
+<body>
+    <style type="text/css" media="screen">
+    </style>
+
+    <div class="container">
+        <div class="row">
+            <h1>Antenna Pattern Converter</h1>
+        </div>
+        <div class="row">
+            <div class="col">
+                <canvas id="canvas-ant" width="800" height="800"></canvas>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Image</h5>
+                        <input id="button-load-img" type="file"></input>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">Scale</h5>
+                        <input id="text-center-db" class="form-control" type="text" placeholder="center gain in dB" value="-35">
+                        <button id="button-select-center" type="button" class="btn btn-primary">Select Center</button>
+                        <input id="text-edge-db" class="form-control" type="text" placeholder="edge gain in dB" value="5">
+                        <button id="button-select-edge" type="button" class="btn btn-primary">Select Edge</button>
+
+                        <button id="button-start-point" type="button" class="btn btn-primary">Start Selecting Point</button>
+                        <button id="button-undo-point" type="button" class="btn btn-warning">Undo Last Point</button>
+                        <button id="button-end-point" type="button" class="btn btn-primary">End Selecting Point</button>
+                    </div>
+                    <div class="card-body">
+                        <button id="button-calc-"
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2"
+        crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.js"
+        integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script>
+    <script src="antenna-pattern.js"></script>
+</body>
+
+</html>
