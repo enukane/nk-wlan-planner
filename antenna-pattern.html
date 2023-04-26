@@ -18,7 +18,7 @@
         </div>
         <div class="row">
             <div class="col">
-                <canvas id="canvas-ant" width="800" height="800"></canvas>
+                <canvas id="canvas-ant" width="720" height="640" style="border: 1px solid;"></canvas>
             </div>
         </div>
         <div class="row">
@@ -41,13 +41,19 @@
 
                         <h6>Plot</h6>
                         <button id="button-start-point" type="button" class="btn btn-primary">Start Selecting Point</button>
-                        <button id="button-undo-point" type="button" class="btn btn-warning">Undo Last Point</button>
-                        <button id="button-end-point" type="button" class="btn btn-primary">End Selecting Point</button>
+                        <button id="button-undo-point" type="button" class="btn btn-warning" disabled>Undo Last Point</button>
+                        <!-- <button id="button-end-point" type="button" class="btn btn-primary">End Selecting Point</button> -->
                     </div>
                     <div class="card-body">
                         <h5 class="card-title">Result</h5>
+                        <h6>Base Model</h6>
+                        <input id="text-base-model" class="form-control" type="text" placeholder="Base Model Name" />
+                        <h6>Display Name</h6>
+                        <input id="text-display-name" class="form-control" type="text" placeholder="Base Model Name" />
+                        <button id="button-end-point" type="button" class="btn btn-primary">Print Result</button>
+                        <button id="button-copy" type="button" class="btn btn-primary">Copy Result</button>
+                        <h6>Result</h6>
                         <textarea id="textarea-result" rows="20" cols="80"></textarea>
-                        <button id="button-copy" type="button" class="btn btn-primary">copy</button>
                     </div>
                 </div>
             </div>
