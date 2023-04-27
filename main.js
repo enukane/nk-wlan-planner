@@ -483,6 +483,39 @@ function reset_coverage_eval(coverages) {
 
 }
 
+function get_ap_db_for_xy(x, y) {
+    let cur_pos = calc_real_point(x, y)
+
+    let aps_db_ary = []
+
+    for (ap_idx in appos_list) {
+        ap_pos = [appos_list[ap_idx].x, appos_list[ap_idx].y]
+        /* detect crossing obstacles */
+        obstaclesAttenuationdB = calc_obstacles_attenuation_db(
+            ary2coordinate(cur_pos),
+            ary2coordinate(ap_pos),
+            obstacles
+        )
+
+        distM = calc_distance_m(cur_pos[0], cur_pos[1], ap_pos[0], ap_pos[1], px2meter)
+
+        powerdb_at_xy = 0
+        if (appos_list[ap_idx].direction == null) {
+            powerdb_at_xy = appos_list[ap_idx].powerdb - obstaclesAttenuationdB - calc_free_space_loss_db(__frequency, distM);
+        } else {
+            powerdb_at_xy = calc_directional_power_db_of_ap_to_xy(appos_list[ap_idx], cur_pos[0], cur_pos[1]) - obstaclesAttenuationdB - calc_free_space_loss_db(__frequency, distM);
+        }
+
+        aps_db_ary.append(power_db_at_xy)
+        if (matrix[y][x] == null || matrix[y][x] < powerdb_at_xy) {
+            //console.log(apPosList[idx].powerdb, powerdb_at_xy)
+            matrix[y][x] = powerdb_at_xy
+        }
+    }
+
+
+}
+
 function update_matrix(matrix, appos_list, obstacles, px2meter, frequency) {
     reset_coverage_eval(__coverage_list);
 
