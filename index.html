@@ -10,6 +10,10 @@
 
 <body>
     <style type="text/css" media="screen">
+        #ap-param-antenna-direction {
+            position: relative;
+            border:10px solid 
+        }
     </style>
 
     <div class="container">
@@ -76,7 +80,10 @@
                                 <option value="0" selected>Omni-Directional</option>
                             </select>
                             <h6 class="card-title">Antenna Angle (right: 0, clockwise)</h6>
-                            <input type="number" class="form-range" value="0" min="-180" max="180" id="ap-param-antenna-angle">
+                            <!-- <input type="number" class="form-range" value="0" min="-180" max="180" id="ap-param-antenna-angle"> -->
+                            <div>
+                                <input type="text" value="0" class="dial" data-displayInput=false data-cursor=true data-width="100" data-rotation="anticlockwise" data-fgColor="#222222" data-thickness=.3 id="ap-param-antenna-angle"></input>
+                            </div>
                             <button id="button-apply-ap-param" type="button" class="btn btn-primary" disabled>Apply</button>
                         </div>
                     </div>
@@ -167,6 +174,7 @@
             crossorigin="anonymous"></script>
         <script src="https://code.jquery.com/jquery-3.6.0.js"
             integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script>
+        <script src="jquery-knob/jquery.knob.js"></script>
         <script src="main.js"></script>
 </body>
 
