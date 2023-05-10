@@ -1891,3 +1891,29 @@ for (const idx in attdb2color) {
     let td = $('<td>').css("background", db2color[1]).css("color", "white").text(db2color[0] - 1)
     $("#tr-obstacles-attdb-colorbar").append(td)
 }
+
+
+// shortcuts
+shortcut.add("a", function() {
+    add_ap(null);
+})
+
+shortcut.add("w", function() {
+    add_wall(null);
+})
+
+shortcut.add("s", function() {
+    add_squared_wall(null);
+})
+
+shortcut.add("d", function() {
+    del_ap(null);
+})
+
+shortcut.add("f", function() {
+    del_wall(null);
+})
+
+shortcut.add("x", function() {
+    add_human_body(null);
+})
