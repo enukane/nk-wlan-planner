@@ -20,6 +20,10 @@ var MapStatus = {
     DEL_COVERAGE: 14,
     ADD_SQUARED_WALL: 15,
     ADDING_SQUARED_WALL: 16,
+    ADD_VERTICAL_WALL: 17,
+    ADDING_VERTICAL_WALL: 18,
+    ADD_HORIZONTAL_WALL: 19,
+    ADDING_HORIZONTAL_WALL: 20
 }
 var __map_status = 0;
 const AP_SELECT_RANGE = 20 // px
@@ -1556,6 +1560,24 @@ function map_mousedown(e) {
 
             __map_status = MapStatus.ADDING_SQUARED_WALL
             break
+        case MapStatus.ADD_VERTICAL_WALL:
+        case MapStatus.ADD_HORIZONTAL_WALL:
+            __working_wall_coordinates = new_wall();
+            __working_wall_coordinates.start.x = xy.x
+            __working_wall_coordinates.start.y = xy.y
+            type_s = get_selected_wall_type()
+            param = wall_type_to_params(type_s)
+            console.log(param)
+            __working_wall_coordinates.attenuation = param.attenuation
+            __working_wall_coordinates.material = param.type
+
+            if (__map_status == MapStatus.ADD_VERTICAL_WALL) {
+                __map_status = MapStatus.ADDING_VERTICAL_WALL;
+            } else {
+                __map_status = MapStatus.ADDING_HORIZONTAL_WALL;
+            }
+
+            break
         case MapStatus.SELECT_SCALE:
             __selecting_scale = new_scale()
             __selecting_scale.start.x = xy.x
@@ -1603,6 +1625,21 @@ function map_mouseup(e) {
             __working_wall_coordinates = null
             __map_status = MapStatus.NONE
             redraw_map()
+            update_status(__default_status)
+            break
+        case MapStatus.ADDING_VERTICAL_WALL:
+        case MapStatus.ADDING_HORIZONTAL_WALL:
+            __working_wall_coordinates.end.x = xy.x
+            __working_wall_coordinates.end.y = xy.y
+            if (__map_status == MapStatus.ADDING_VERTICAL_WALL) {
+                __working_wall_coordinates.end.x = __working_wall_coordinates.start.x
+            } else {
+                __working_wall_coordinates.end.y = __working_wall_coordinates.start.y
+            }
+            obstacles_list.push(__working_wall_coordinates)
+            __working_wall_coordinates = null
+            __map_status = MapStatus.NONE
+            redraw_map();
             update_status(__default_status)
             break
         case MapStatus.SELECTING_SCALE:
@@ -1716,6 +1753,16 @@ function add_wall(e) {
 function add_squared_wall(e) {
     update_status("drat to draw square of wall")
     __map_status = MapStatus.ADD_SQUARED_WALL
+}
+
+function add_vertical_wall(e) {
+    update_status("drag to draw vertical wall")
+    __map_status = MapStatus.ADD_VERTICAL_WALL
+}
+
+function add_horizontal_wall(e) {
+    update_status("drag to draw horizontal wall")
+    __map_status = MapStatus.ADD_HORIZONTAL_WALL
 }
 
 function del_wall(e) {
@@ -1861,6 +1908,8 @@ $("#button-del-ap").click(function(e) { del_ap(e); })
 $("#button-apply-ap-param").click(function(e) { apply_ap(e); })
 $("#button-add-wall").click(function(e) { add_wall(e); })
 $("#button-add-square").click(function(e) {add_squared_wall(e); })
+$("#button-add-v-wall").click(function(e) { add_vertical_wall(e); })
+$("#button-add-h-wall").click(function(e) { add_horizontal_wall(e); })
 $("#button-del-wall").click(function(e) { del_wall(e); })
 $("#button-clear-wall").click(function(e) { clear_wall(e); })
 $("#button-add-human").click(function(e) { add_human_body(e); })
@@ -1904,6 +1953,14 @@ shortcut.add("w", function() {
 
 shortcut.add("s", function() {
     add_squared_wall(null);
+})
+
+shortcut.add("v", function() {
+    add_vertical_wall(null);
+})
+
+shortcut.add("t", function() {
+    add_horizontal_wall(null);
 })
 
 shortcut.add("d", function() {
