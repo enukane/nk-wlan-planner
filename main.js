@@ -1883,7 +1883,7 @@ for (const [key, pattern] of Object.entries(AntennaPatterns)) {
 // color table
 for (const idx in dBPower2colors) {
     let db2color = dBPower2colors[idx]
-    let td = $('<td>').css("background", db2color[1]).css("color", "white").text("> " + db2color[0])
+    let td = $('<td>').css("background", db2color[1]).css("opacity", 0.7).css("color", "white").text("> " + db2color[0])
     $("#tr-powerdb-colorbar").append(td)
 }
 for (const idx in attdb2color) {
