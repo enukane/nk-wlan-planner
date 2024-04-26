@@ -17,7 +17,7 @@
             <h1>Antenna Pattern Converter</h1>
         </div>
         <div class="row">
-            <div class="col">
+            <div class="col wrapper">
                 <canvas id="canvas-ant" width="720" height="640" style="border: 1px solid;"></canvas>
             </div>
         </div>
@@ -42,6 +42,8 @@
                         <h6>Plot</h6>
                         <button id="button-start-point" type="button" class="btn btn-primary">Start Selecting Point</button>
                         <button id="button-undo-point" type="button" class="btn btn-warning" disabled>Undo Last Point</button>
+                        <button id="button-reset-all" type="button" class="btn btn-danger" disabled>Reset All</button>
+                        <p id="point-counter">0</p>
                         <!-- <button id="button-end-point" type="button" class="btn btn-primary">End Selecting Point</button> -->
                     </div>
                     <div class="card-body">
@@ -70,3 +72,4 @@
 </body>
 
 </html>
+

@@ -52,10 +52,15 @@ function redraw_canvas() {
     canvas_img_w = img_w * fit_rate
     canvas_img_h = img_h * fit_rate
 
+    ctx.clearRect(0,0, canvas.width, canvas.height)
+
     ctx.save();
-    ctx.translate(__base_image.width / 2, __base_image.height / 2);
+    ctx.translate(canvas_img_w / 2, canvas_img_h / 2);
     ctx.rotate(__rotation_deg * (Math.PI / 180))
-    ctx.drawImage(__base_image, -(__base_image.width / 2), -(__base_image.height/2))
+    ctx.translate(-canvas_img_w / 2, -canvas_img_h / 2);
+    ctx.drawImage(__base_image,
+      0, 0, __base_image.width, __base_image.height,
+      0, 0, canvas_img_w, canvas_img_h)
     //ctx.drawImage(__base_image,
     //    0, 0, __base_image.width, __base_image.height,
     //    0, 0, canvas_img_w, canvas_img_h)
@@ -67,12 +72,42 @@ function redraw_canvas() {
     if (__config.edge != null && __config.edge.xy != null) {
         draw_circle(__config.edge.xy, 5, "red")
     }
+    draw_align_line(__config)
     draw_selected_points(__selected_points)
 }
 
 function draw_center_edge_points(center, edge){
     draw_circle(center, 5, "black")
     draw_circle(edge, 5, "black")
+}
+
+function draw_align_line(config) {
+  if (config.center == null || config.center.xy == null) {
+    return
+  }
+  if (config.edge == null || config.edge.xy == null) {
+    return
+  }
+
+  let linelen = calc_distance_px(config.center.xy, config.edge.xy)
+  let canvas = document.getElementById("canvas-ant")
+  let ctx = canvas.getContext("2d")
+
+
+
+  for (let deg = 0; deg <= 180; deg += 10) {
+    let rad = deg2rad(deg)
+
+    deg_edge_x = __config.center.xy.x + Math.sin(rad) * linelen
+    deg_edge_y = __config.center.xy.y - Math.cos(rad) * linelen
+
+    ctx.moveTo(config.center.xy.x, config.center.xy.y)
+    ctx.lineTo(deg_edge_x, deg_edge_y)
+    ctx.lineWidth=0.5
+    ctx.strokeStyle="gray"
+    ctx.stroke()
+
+  }
 }
 
 function draw_selected_points(points) {
@@ -244,6 +279,9 @@ function on_selecting_point_at(xy) {
     //}
     //__selected_points.push(new_point)
     __selected_points.push(prep_point)
+
+    let elm = document.getElementById("point-counter")
+    elm.innerText = __selected_points.length + " points"
 
     __current_deg += 10
     if (__current_deg > 180) {
