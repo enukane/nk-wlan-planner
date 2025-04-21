@@ -10,11 +10,32 @@
 
 <body>
     <style type="text/css" media="screen">
+        .direction-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 40px);
+            grid-template-rows: repeat(3, 40px);
+            gap: 5px;
+            margin: 0 auto;
+        }
+
+        .direction-grid .btn {
+            padding: 6px;
+            font-size: 18px;
+            line-height: 1;
+            height: 40px;
+            width: 40px;
+        }
+
+        .empty-cell {
+            width: 40px;
+            height: 40px;
+        }
     </style>
 
     <div class="container">
         <h1>Map</h1>
-        <p><a href="https://github.com/enukane/nk-wlan-planner">View the project on GitHub</a>  <a href="./antenna-pattern.html">Antenna Pattern Converter</a></p>
+        <p><a href="https://github.com/enukane/nk-wlan-planner">View the project on GitHub</a> <a
+                href="./antenna-pattern.html">Antenna Pattern Converter</a></p>
         <canvas id="canvas-map" width="1280" height="800"></canvas>
         <div class="row">
             <label>Power [dBm]</label>
@@ -41,7 +62,7 @@
             Press Button to operate
         </div>
         <div id="coverage-status" class="alert alert-primary" role="alert">
-            Coverage Evaluation: 
+            Coverage Evaluation:
         </div>
     </div>
     <div>
@@ -57,9 +78,12 @@
                         <div class="card-body">
                             <h5 class="card-title">Operations</h5>
                             <div class="btn-group">
-                                <button id="button-add-ap" type="button" class="btn btn-outline-primary toggle">Add (a)</button>
-                                <button id="button-modify-ap" type="button" class="btn btn-outline-success">Modify</button>
-                                <button id="button-del-ap" type="button" class="btn btn-outline-warning">Delete (d)</button>
+                                <button id="button-add-ap" type="button" class="btn btn-outline-primary toggle">Add
+                                    (a)</button>
+                                <button id="button-modify-ap" type="button"
+                                    class="btn btn-outline-success">Modify</button>
+                                <button id="button-del-ap" type="button" class="btn btn-outline-warning">Delete
+                                    (d)</button>
                                 <button id="button-clear-ap" type="button" class="btn btn-outline-danger">Clear</button>
                             </div>
                             <h5 class="card-title">Parameters</h5>
@@ -80,13 +104,58 @@
                             </select>
                             <h6 class="card-title">Antenna Angle (right: 0, clockwise)</h6>
                             <div class="row">
-                                <div class="col-md-8">
-                                    <input type="number" class="form-range" value="0" min="-180" max="180" id="ap-param-antenna-angle">
+                                <div class="row-md-4 mb-2">
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" value="0" min="-180" max="180"
+                                            id="ap-param-antenna-angle">
+                                        <span class="input-group-text">degree</span>
+                                    </div>
                                 </div>
-                                <div class="col-md-4">
-                                    <button id="button-apply-ap-param" type="button" class="btn btn-outline-primary" disabled>Apply</button>
+                                <div class="row-md-4 mb-2">
+                                    <p class="text-muted small mb-1">Quick Direction Selection:</p>
                                 </div>
-                            </div> 
+                                <div class="row-md-4 mb-2">
+                                        <div class="direction-grid">
+                                            <button type="button" class="btn btn-outline-secondary direction-btn"
+                                                data-angle="135">
+                                                <span>↖️</span>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary direction-btn"
+                                                data-angle="90">
+                                                <span>⬆️</span>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary direction-btn"
+                                                data-angle="45">
+                                                <span>↗️</span>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary direction-btn"
+                                                data-angle="180">
+                                                <span>⬅️</span>
+                                            </button>   
+                                            <div class="empty-cell"></div>
+                                            <button type="button" class="btn btn-outline-secondary direction-btn"
+                                                data-angle="0">
+                                                <span>➡️</span>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary direction-btn"
+                                                data-angle="-135">
+                                                <span>↙️</span>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary direction-btn"
+                                                data-angle="-90">
+                                                <span>⬇️</span>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary direction-btn"
+                                                data-angle="-45">
+                                                <span>↘️</span>
+                                            </button>
+                                            </div>
+                                </div>
+                                <div class="row-md-4 mb-2">
+                                    <button id="button-apply-ap-param" type="button" class="btn btn-outline-primary"
+                                        disabled>Apply</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -112,17 +181,24 @@
                             <h5 class="card-title">Operations</h5>
                             <div class="card-text">
                                 <div class="btn-group">
-                                    <button id="button-add-wall" type="button" class="btn btn-outline-primary">Add Line (w)</button>
-                                    <Button id="button-add-square" type="button" class="btn btn-outline-primary">Square Box (s)</Button>
+                                    <button id="button-add-wall" type="button" class="btn btn-outline-primary">Add
+                                        Line (w)</button>
+                                    <Button id="button-add-square" type="button" class="btn btn-outline-primary">Square
+                                        Box (s)</Button>
                                 </div>
                                 <div class="btn-group">
-                                    <Button id="button-add-v-wall" type="button" class="btn btn-outline-primary">Vertical Line (v)</Button>
-                                    <Button id="button-add-h-wall" type="button" class="btn btn-outline-primary">Horizontal Line (t)</Button>
-                                    <button id="button-add-human" type="button" class="btn btn-outline-primary">Human Body (x)</button>
+                                    <Button id="button-add-v-wall" type="button"
+                                        class="btn btn-outline-primary">Vertical Line (v)</Button>
+                                    <Button id="button-add-h-wall" type="button"
+                                        class="btn btn-outline-primary">Horizontal Line (t)</Button>
+                                    <button id="button-add-human" type="button" class="btn btn-outline-primary">Human
+                                        Body (x)</button>
                                 </div>
                                 <div class="btn-group">
-                                    <button id="button-del-wall" type="button" class="btn btn-outline-warning">Delete Wall (f)</button>
-                                    <button id="button-clear-wall" type="button" class="btn btn-outline-danger">Clear Wall</button>
+                                    <button id="button-del-wall" type="button" class="btn btn-outline-warning">Delete
+                                        Wall (f)</button>
+                                    <button id="button-clear-wall" type="button" class="btn btn-outline-danger">Clear
+                                        Wall</button>
                                 </div>
                             </div>
                         </div>
@@ -155,8 +231,10 @@
                         <div class="card-body">
                             <h5 class="card-title">Image Scale [Meter]</h5>
                             <input id="text-scale-meter" class="form-control" type="text" placeholder="Length in Meter">
-                            <button id="button-select-scale" type="button" class="btn btn-outline-primary">Drag & Select Scale</button>
-                            <button id="button-measure-scale" type="button" class="btn btn-outline-primary">Measure Scale</button>
+                            <button id="button-select-scale" type="button" class="btn btn-outline-primary">Drag &
+                                Select Scale</button>
+                            <button id="button-measure-scale" type="button" class="btn btn-outline-primary">Measure
+                                Scale</button>
                         </div>
                     </div>
                     <div class="card">
@@ -169,13 +247,15 @@
                         <div class="card-body">
                             <h5 class="card-title">Coverage</h5>
                             <button id="button-add-coverage" type="button" class="btn btn-outline-primary">Add</button>
-                            <button id="button-del-coverage" type="button" class="btn btn-outline-primary">Delete</button>
+                            <button id="button-del-coverage" type="button"
+                                class="btn btn-outline-primary">Delete</button>
                         </div>
                     </div>
                     <div class="card">
                         <div class="card-body">
                             <h5 class="card-title">Save Config</h5>
-                            <button id="button-download" type="button" class="btn btn-outline-primary">Download Config</button>
+                            <button id="button-download" type="button" class="btn btn-outline-primary">Download
+                                Config</button>
                             <h5 class="card-title">Load Config</h5>
                             <input type="file" name="file" id="button-config-upload">
                         </div>
@@ -183,7 +263,8 @@
                     <div class="card">
                         <div class="card-body">
                             <h5 class="card-title">Save Image</h5>
-                            <button id="button-image-download" type="button" class="btn btn-outline-primary">Download Image</button>
+                            <button id="button-image-download" type="button" class="btn btn-outline-primary">Download
+                                Image</button>
                         </div>
                     </div>
                 </div>

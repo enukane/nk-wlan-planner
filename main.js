@@ -1412,15 +1412,30 @@ function map_click_to_modify_ap(x, y) {
     let direction = ap.direction
 
     $("#ap-param-powerdb").val(powerdb)
+    console.log("direction: ", direction)
     if (direction) {
         $("#ap-param-antenna-type").val(direction.pattern.key)
         $("#ap-param-antenna-angle").val(direction.degree)
+        highlightDirectionButton(direction.degree)
     }
 
     $("#button-apply-ap-param").prop("disabled", false)
 
     update_status("modify AP parameters and press Apply button")
     __map_status = MapStatus.NONE
+}
+
+function highlightDirectionButton(degree) {
+    $(".direction-btn").removeClass("active")
+    $(`.direction-btn[data-angle='${degree}']`).addClass("active")
+}
+
+function getSelectedAngle() {
+    const angle = parseInt($("#ap-param-antenna-angle").val())
+    if (isNaN(angle)) {
+        return 0
+    }
+    return angle
 }
 
 function map_click_to_del_ap(x, y) {
@@ -1839,7 +1854,7 @@ function apply_ap(e) {
     appos_list[__ap_idx_selected].powerdb = parseInt($("#ap-param-powerdb").val())
     let pattern = $("#ap-param-antenna-type").val()
     if (pattern != 0) {
-        let degree = $("#ap-param-antenna-angle").val()
+        let degree = getSelectedAngle()
         appos_list[__ap_idx_selected].direction = {
             degree: degree,
             pattern: AntennaPatterns[pattern],
@@ -2034,6 +2049,12 @@ $("#button-del-coverage").click(function (e) { del_coverage(e) })
 $("#button-download").click(function (e) { download_clicked(e); })
 $("#button-config-upload").on('change', function(e) { change_config(e); })
 $("#button-image-download").click(function(e) { download_image(e); })
+
+$(document).on("click", ".direction-btn", function() {
+    $(".direction-btn").removeClass("active")
+    $(this).addClass("active")
+    $("#ap-param-antenna-angle").val($(this).data("angle"))
+})
 
 // add option of antenna
 for (const [key, pattern] of Object.entries(AntennaPatterns)) {
