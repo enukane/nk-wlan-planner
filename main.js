@@ -39,6 +39,7 @@ var __ap_idx_selected = null;
 
 var background_image = new Image();
 var __map_file_name = background_image.src = "map.png";
+var __current_image_data_url = null;
 
 var __coverage_list = []
 var COVERAGE_THRESHOLD_DB = -55
@@ -1940,6 +1941,7 @@ function change_image(e) {
     reader.onload = function() {
         var imgsrc = reader.result;
         background_image.src = imgsrc
+        __current_image_data_url = imgsrc
         background_image.onload = function () {
             redraw_map()
         }
@@ -1961,8 +1963,12 @@ function download_clicked() {
     let config_obj = {
         ap: appos_list,
         obstacles: obstacles_list,
+        coverage: __coverage_list,
         map_image_file: __map_file_name,
         px2meter: __px2meter
+    }
+    if (__current_image_data_url) {
+        config_obj.map_image_file = __current_image_data_url;
     }
     let config_s = JSON.stringify(config_obj)
     let blob = new Blob([config_s], {type: 'application/json'})
@@ -2003,13 +2009,182 @@ function change_config(e) {
         obstacles_list = config_json.obstacles
         __px2meter = config_json.px2meter
 
+        if (config_json.map_image_file) {
+            __current_image_data_url = background_image.src = config_json.map_image_file;
+            __map_file_name = config_json.map_image_file || "imported_map.png"
+        }
         update_status("Loading config done")
 
-        redraw_map()
-
+        background_image.onload = function () {
+            console.log("background image loaded")
+            redraw_map()
+        }
     }
     reader.readAsText(file)
+}
 
+//Local Storage Design Management
+const DESIGNS_LIST_KEY = "nk-wlan-planner_designs"
+function getSavedDesigns() {
+    const designsJSON = localStorage.getItem(DESIGNS_LIST_KEY);
+    if (!designsJSON) {
+        return [];
+    }
+
+    try {
+        return JSON.parse(designsJSON);
+    } catch (e) {
+        console.error("Error parsing projects list", e);
+        return []
+    }
+}
+
+function updateDesignsList() {
+    const designs = getSavedDesigns();
+    const select = $("#designs-list");
+    console.log("updating", designs)
+    select.empty();
+    select.append($('<option value="" selected disabled>Select a design to load</option>'));
+
+    if (designs.length === 0) {
+        select.append($('<option disabled>No saved designs</option>'));
+        return;
+    }
+    designs.forEach((design, index) => {
+        const date = new Date(design.timestamp);
+        const dateStr = date.toLocaleDateString() + " " + date.toLocaleTimeString();
+        console.log(index, design.name, dateStr)
+        select.append($('<option>').val(index).text(design.name + " (" + dateStr + ")"));
+    });
+}
+
+function saveDesign() {
+    const designName = $("#design-name").val().trim();
+    if (!designName) {
+        alert("Please enter a design name");
+        return;
+    }
+
+    /*
+    const canvas = document.getElementById("canvas-map");
+    let imageData;
+    try {
+        imageData = canvas.toDataURL("image/png");
+    } catch(e) {
+        console.error("Error converting map image to data URL", e);
+        imageData = null;
+    }
+        */
+    let imageData = __current_image_data_url;
+
+    // Create config object
+    const config = {
+        ap: appos_list,
+        obstacles: obstacles_list,
+        px2meter: __px2meter,
+        coverage: __coverage_list,
+    };
+
+    const designData = {
+        name: designName,
+        config: config,
+        imageData: imageData,
+    };
+
+    let designs = getSavedDesigns();
+
+    const existingIndex = designs.findIndex(d => d.name === designName);
+
+    if (existingIndex !== -1) {
+        designs.splice(existingIndex, 1);
+    }
+
+    designs.unshift({
+        name: designName,
+        timestamp: Date.now()
+    });
+
+    localStorage.setItem(DESIGNS_LIST_KEY, JSON.stringify(designs));
+    localStorage.setItem(`nk-wlan-planner_design_${designName}`, JSON.stringify(designData));
+    updateDesignsList();
+    update_status(`Design "${designName}" saved successfully`);
+}
+
+function loadDesign() {
+    const index = $("#designs-list").val();
+    if (index === null) {
+        alert("Please select a design to load");
+        return;
+    }
+    const designs = getSavedDesigns();
+    const design = designs[index];
+    if (!design) {
+        alert("Design not found");
+        return;
+    }
+    const designName = design.name;
+    if (!designName) {
+        alert("Please select a design to load");
+        return;
+    }
+    const designDataJSON = localStorage.getItem(`nk-wlan-planner_design_${designName}`);
+    if (!designDataJSON) {
+        alert("Design not found");
+        return;
+    }
+
+    try {
+        const designData = JSON.parse(designDataJSON);
+        appos_list = designData.config.ap;
+        obstacles_list = designData.config.obstacles;
+        __px2meter = designData.config.px2meter;
+
+        if (designData.config.coverage) {
+            __coverage_list = designData.config.coverage;
+        }
+
+        if (designData.imageData) {
+            __current_image_data_url = background_image.src = designData.imageData;
+            __map_file_name = designName + ".png";
+            background_image.onload = function () {
+                redraw_map();
+            }
+        } else {
+            redraw_map();
+        }
+
+        $("#design-name").val(designName);
+        update_status(`Design "${designName}" loaded successfully`);
+    } catch (e) {
+        console.error("Error loading design data", e);
+        alert("Error loading project. The data might be corrupted");
+    }
+}
+
+function deleteDesign() {
+    const index = $("#designs-list").val();
+    if (index === null) {
+        alert("Please select a design to delete");
+        return;
+    }
+    let designs = getSavedDesigns();
+    const design = designs[index];
+    if (!design) {  
+        alert("Design not found");
+        return;
+    }
+    const designName = design.name;
+    if (!designName) {
+        alert("Please select a design to delete");
+        return;
+    }
+
+    designs = designs.filter(d => d.name !== designName);
+
+    localStorage.setItem(DESIGNS_LIST_KEY, JSON.stringify(designs));
+    localStorage.removeItem(`nk-wlan-planner_design_${designName}`);
+    updateDesignsList();
+    update_status(`Design "${designName}" deleted successfully`);
 }
 
 function download_image(e) {
@@ -2048,7 +2223,14 @@ $("#button-add-coverage").click(function (e) { add_coverage(e) })
 $("#button-del-coverage").click(function (e) { del_coverage(e) })
 $("#button-download").click(function (e) { download_clicked(e); })
 $("#button-config-upload").on('change', function(e) { change_config(e); })
+$("#button-save-design").on('click', function(e) { saveDesign(); })
+$("#button-load-design").on('click', function(e) { loadDesign(); })
+$("#button-delete-design").on('click', function(e) { deleteDesign(); })
 $("#button-image-download").click(function(e) { download_image(e); })
+
+$(document).ready(function() {
+    updateDesignsList();
+})
 
 $(document).on("click", ".direction-btn", function() {
     $(".direction-btn").removeClass("active")
