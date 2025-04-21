@@ -76,6 +76,7 @@ var __ap_idx_selected = null;
 
 // Map configuration
 var background_image = new Image();
+background_image.crossOrigin = "anonymous";
 var __map_file_name = background_image.src = "map.png";
 var __current_image_data_url = null;
 var __coverage_list = []
@@ -1209,6 +1210,7 @@ function change_image(e) {
     var reader = new FileReader();
     reader.onload = function() {
         var imgsrc = reader.result;
+        background_image.crossOrigin = "anonymous";
         background_image.src = imgsrc
         __current_image_data_url = imgsrc
         background_image.onload = function () {
