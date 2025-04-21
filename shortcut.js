@@ -11,7 +11,7 @@ shortcut = {
 		var default_options = {
 			'type':'keydown',
 			'propagate':false,
-			'disable_in_input':false,
+			'disable_in_input':true,
 			'target':document,
 			'keycode':false
 		}
