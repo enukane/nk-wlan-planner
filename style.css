@@ -1,0 +1,28 @@
+.direction-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 40px);
+    grid-template-rows: repeat(3, 40px);
+    gap: 5px;
+    margin: 0 auto;
+}
+
+.direction-grid .btn {
+    padding: 6px;
+    font-size: 18px;
+    line-height: 1;
+    height: 40px;
+    width: 40px;
+}
+
+.empty-cell {
+    width: 40px;
+    height: 40px;
+}
+
+.control-section {
+    margin-bottom: 1rem;
+}
+
+.status-section {
+    margin-bottom: 1rem;
+}
