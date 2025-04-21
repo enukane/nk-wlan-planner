@@ -26,10 +26,12 @@ var MapStatus = {
     ADDING_HORIZONTAL_WALL: 20
 }
 var __map_status = 0;
+
 const AP_SELECT_RANGE = 20 // px
-var __ap_delete_range = 20 //px
-var __default_status = "Press Button to operate"
-var __shoulder_width_m = 0.43 //[m]
+const AP_DELETE_RANGE = 20 //px
+const DEFAULT_STATUS_MSG = "Press Button to operate"
+const SHOULDER_WIDTH_M = 0.43 //[m]
+const COVERAGE_THRESHOLD_DB = -55
 
 var __working_wall_coordinates = null;
 
@@ -42,7 +44,6 @@ var __map_file_name = background_image.src = "map.png";
 var __current_image_data_url = null;
 
 var __coverage_list = []
-var COVERAGE_THRESHOLD_DB = -55
 
 var __frequency = 5180 * 1000 * 1000;
 var AntennaPatterns = {
@@ -843,7 +844,7 @@ var selected_length_px_on_image = 1300;
 var selected_length_meter = 60;
 var __px2meter = selected_length_meter / selected_length_px_on_image; // [m/px]
 
-var default_ap_powerdb = 17.0;
+var DEFAULT_AP_POWERDB = 17.0; // dBm
 
 function init_matrix(xlim, ylim) {
     var matrix = new Array(ylim);
@@ -865,24 +866,6 @@ function update_matrix_with_ap(matrix, powerdb, ap_x, ap_y, px2meter, freq_hz) {
     xboxcenter = xbox * 5 + 5 / 2
     yboxcenter = ybox * 5 + 5 / 2
     matrix[ybox][xbox] = powerdb
-    //matrix[parseInt(apAtY/5)][parseInt(apAtX/5)] = powerdb
-
-    //for (y = 0; y < matrix.length; y++) {
-    //    for (x = 0; x < matrix[y].length; x++) {
-    //        xPos = x * 5 + 5/2;
-    //        yPos = y * 5 + 5/2;
-    //        distM = Math.sqrt( Math.pow(Math.abs(xPos - xboxcenter) * px2meter, 2) + Math.pow(Math.abs(yPos - yboxcenter) * px2meter, 2))
-
-    //        dBPowerAtXY = dBPower - calcFreeSpaceLossdB(freqHz, distM)
-    //        //console.log(xPos, yPos, distM, dBPowerAtXY)
-    //        if (matrix[y][x] == null || matrix[y][x] < dBPowerAtXY) {
-    //            matrix[y][x] = dBPowerAtXY
-    //        }
-
-    //    }
-    //}
-
-    //iterativeUpdatedBPower(matrix, xbox, ybox, dBPower, px2meter, freqHz)
 }
 
 function calc_real_point(xbox, ybox) {
@@ -1063,45 +1046,6 @@ function update_matrix(matrix, appos_list, obstacles, px2meter, frequency) {
     }
 }
 
-//function iterativeUpdatedBPower(matrix, xBox, yBox, dBPower, px2meter, freqHz) {
-//    console.log("updateint adjaectt (%d, %d) power=%d (current=%d)", xBox, yBox, dBPower, matrix[yBox][xBox])
-//    console.log(matrix[yBox][xBox], dBPower)
-//    if (matrix[yBox][xBox] != null) {
-//        if (matrix[yBox][xBox] > dBPower) {
-//            console.log("already highpower: OUT");
-//            return;
-//        }
-//    }
-
-//    if (dBPower < dBPowerLimit) {
-//        console.log("power level too low");
-//        return;
-//    }
-
-//    matrix[yBox][xBox] = dBPower;
-
-//    xyLength = 5 * px2meter
-//    diagonalLength = 5 * Math.sqrt(2) * px2meter;
-//    xydBPower = dBPower - calc_free_space_loss_db(freqHz, xyLength)
-//    nondiagonaldBPower = dBPower - calc_free_space_loss_db(freqHz, diagonalLength)
-
-//    for (dY = -1; dY < 2; dY++) {
-//        for (dX = -1; dX < 2; dX++) {
-//            if (dX == 0 && dY == 0) {
-//                continue
-//            }
-//            console.log(dX, dY, xBox, yBox)
-//            if (Math.abs(dY) == Math.abs(dX)) {
-//                iterativeUpdatedBPower(matrix, xBox + dX, yBox + dY, nondiagonaldBPower, px2meter, freqHz)
-//            } else  {
-//                iterativeUpdatedBPower(matrix, xBox + dX, yBox + dY, xydBPower, px2meter, freqHz)
-//            }
-//        }
-//    }
-
-
-//}
-
 function dbm2mw(dbm) {
     return Math.pow(10, dbm / 10)
 }
@@ -1118,7 +1062,6 @@ function calc_free_space_loss_db(freq_hz, dist_m) {
     return dB
 }
 
-var dBPowerLimit = -96;
 var dBPower2colors = [
     //[-15, "red"],
     //[-25, "red"],
@@ -1211,15 +1154,6 @@ function draw_coverages(__coverage_list) {
     }
 }
 
-function draw_circle(x, y, range) {
-    __ctx.beginPath()
-    __ctx.arc(x, y, range, 0 * Math.PI / 180, 360 * Math.PI / 180, false)
-    __ctx.fillStyle = "black"
-    __ctx.fill();
-    __ctx.stroke()
-
-}
-
 function draw_line(x0, y0, x1, y1) {
     __ctx.beginPath();
     __ctx.moveTo(x0, y0);
@@ -1300,7 +1234,7 @@ function redraw_map() {
 
     // fill ap
     for (key in appos_list) {
-        update_matrix_with_ap(matrix, default_ap_powerdb, appos_list[key].x, appos_list[key].y, __px2meter, __frequency)
+        update_matrix_with_ap(matrix, DEFAULT_AP_POWERDB, appos_list[key].x, appos_list[key].y, __px2meter, __frequency)
     }
     update_matrix(matrix, appos_list, obstacles_list, __px2meter, __frequency)
 
@@ -1449,7 +1383,7 @@ function map_click_to_del_ap(x, y) {
 
         distM = calc_distance_px(x, y, ap.x, ap.y)
         console.log("dist: ", distM, x, y, ap.x, ap.y)
-        if (distM < __ap_delete_range) {
+        if (distM < AP_DELETE_RANGE) {
             del_idx = ap_idx
             break
         }
@@ -1468,8 +1402,8 @@ function map_click_to_del_ap(x, y) {
 function map_click_to_add_human(x, y) {
     human_params = wall_type_to_params("humanbody")
     angle_radian = Math.floor(Math.random() * 180) * (Math.PI / 180)
-    end_x = Math.cos(angle_radian) * (__shoulder_width_m / __px2meter) + x
-    end_y = Math.sin(angle_radian) * (__shoulder_width_m / __px2meter) + y
+    end_x = Math.cos(angle_radian) * (SHOULDER_WIDTH_M / __px2meter) + x
+    end_y = Math.sin(angle_radian) * (SHOULDER_WIDTH_M / __px2meter) + y
 
     obstacle = new_wall()
     obstacle.start.x = x
@@ -1502,7 +1436,7 @@ function map_click_to_del_wall(x, y) {
         end_y = obstacle.end.y
 
         distM = calc_distance_px_point2line(x, y, start_x, start_y, end_x, end_y)
-        if (distM < __ap_delete_range) {
+        if (distM < AP_DELETE_RANGE) {
             del_idx = obstacle_idx
             break
         }
@@ -1735,7 +1669,7 @@ function map_mouseup(e) {
         case MapStatus.ADD_WALL:
         case MapStatus.SELECT_SCALE:
             __map_status = MapStatus.NONE;
-            update_status(__default_status)
+            update_status(DEFAULT_STATUS_MSG)
             break;
         case MapStatus.ADDING_WALL:
             __working_wall_coordinates.end.x = xy.x
@@ -1744,7 +1678,7 @@ function map_mouseup(e) {
             __working_wall_coordinates = null
             __map_status = MapStatus.NONE
             redraw_map();
-            update_status(__default_status)
+            update_status(DEFAULT_STATUS_MSG)
             break;
         case MapStatus.ADDING_SQUARED_WALL:
             __working_wall_coordinates.end.x = xy.x
@@ -1753,7 +1687,7 @@ function map_mouseup(e) {
             __working_wall_coordinates = null
             __map_status = MapStatus.NONE
             redraw_map()
-            update_status(__default_status)
+            update_status(DEFAULT_STATUS_MSG)
             break
         case MapStatus.ADDING_VERTICAL_WALL:
         case MapStatus.ADDING_HORIZONTAL_WALL:
@@ -1768,7 +1702,7 @@ function map_mouseup(e) {
             __working_wall_coordinates = null
             __map_status = MapStatus.NONE
             redraw_map();
-            update_status(__default_status)
+            update_status(DEFAULT_STATUS_MSG)
             break
         case MapStatus.SELECTING_SCALE:
             __selecting_scale.end.x = xy.x
@@ -1787,7 +1721,7 @@ function map_mouseup(e) {
             __selecting_scale = null
             __map_status = MapStatus.NONE
             redraw_map();
-            update_status(__default_status);
+            update_status(DEFAULT_STATUS_MSG);
             break;
         case MapStatus.MEASURING_SCALE:
             __selecting_scale.end.x = xy.x
@@ -2212,7 +2146,7 @@ $("#button-add-wall").click(function(e) { add_wall(e); })
 $("#button-add-square").click(function(e) {add_squared_wall(e); })
 $("#button-add-v-wall").click(function(e) { add_vertical_wall(e); })
 $("#button-add-h-wall").click(function(e) { add_horizontal_wall(e); })
-$("#button-del-wall").click(function(e) { del_wall(e); })
+$("#button-delete-wall").click(function(e) { del_wall(e); })
 $("#button-clear-wall").click(function(e) { clear_wall(e); })
 $("#button-add-human").click(function(e) { add_human_body(e); })
 $("#select-freq-type").change(function(e) { change_freqhz(e); })
