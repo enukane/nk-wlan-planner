@@ -78,6 +78,8 @@
                                     (d)</button>
                                 <button id="button-clear-ap" type="button" class="btn btn-outline-danger">Clear</button>
                             </div>
+                        </div>
+                        <div class="card-body">
                             <h5 class="card-title">Parameters</h5>
                             <h6 class="dard-title">Tx Power</h6>
                             <select id="ap-param-powerdb" class="form-select" aria-label="select ap power in dBm">
@@ -157,20 +159,7 @@
                             <h4>Wall/Obstacles</h4>
                         </div>
                         <div class="card-body w-100">
-                            <h5 class="card-title">Type</h5>
-                            <div class="card-text">
-                                <select id="select-wall-type" class="form-select" aria-label="select wall type">
-                                    <option value="drywall" selected>Dry Wall (3 dB)</option>
-                                    <option value="bookshelf">Bookshelf (3 dB)</option>
-                                    <option value="exteriorglass">Exterior Glass (3 dB)</option>
-                                    <option value="wooddoor">Wood Door (6 dB)</option>
-                                    <option value="marble">Marble Wall (6 dB)</option>
-                                    <option value="brick">Brick Wall (10 dB)</option>
-                                    <option value="concrete">Concrete Wall (12 dB)</option>
-                                    <option value="elevator-shaft">Elevator Shaft (30 dB)</option>
-                                </select>
-                            </div>
-                            <h5 class="card-title mt-3">Operations</h5>
+                            <h5 class="card-title">Operations</h5>
                             <div class="card-text">
                                 <div class="d-flex flex-column gap-2">
                                     <div class="btn-group w-100">
@@ -198,6 +187,21 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="card-body">
+                            <h5 class="card-title">Type</h5>
+                            <div class="card-text">
+                                <select id="select-wall-type" class="form-select" aria-label="select wall type">
+                                    <option value="drywall" selected>Dry Wall (3 dB)</option>
+                                    <option value="bookshelf">Bookshelf (3 dB)</option>
+                                    <option value="exteriorglass">Exterior Glass (3 dB)</option>
+                                    <option value="wooddoor">Wood Door (6 dB)</option>
+                                    <option value="marble">Marble Wall (6 dB)</option>
+                                    <option value="brick">Brick Wall (10 dB)</option>
+                                    <option value="concrete">Concrete Wall (12 dB)</option>
+                                    <option value="elevator-shaft">Elevator Shaft (30 dB)</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
                     <div class="row card">
                         <div class="card-header">
@@ -221,35 +225,46 @@
                             </select>
                         </div>
                     </div>
+                    <div class="row card">
+                        <div class="card-header">
+                            <h4>Coverage</h4>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">Operations</h5>
+                            <button id="button-add-coverage" type="button" class="btn btn-outline-primary">Add</button>
+                            <button id="button-del-coverage" type="button"
+                                class="btn btn-outline-danger">Delete</button>
+                        </div>
+
+                    </div>
                 </div>
                 <div class="col">
                     <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">Image Scale [Meter]</h5>
-                            <input id="text-scale-meter" class="form-control" type="text" placeholder="Length in Meter">
-                            <button id="button-select-scale" type="button" class="btn btn-outline-primary">Drag &
-                                Select Scale</button>
-                            <button id="button-measure-scale" type="button" class="btn btn-outline-primary">Measure
-                                Scale</button>
+                        <div class="card-header">
+                            <h4>Map Image</h4>
                         </div>
-                    </div>
-                    <div class="card">
                         <div class="card-body">
                             <h5 class="card-title">Image Upload</h5>
                             <input type="file" name="file" id="button-image-upload">
                         </div>
-                    </div>
-                    <div class="card">
                         <div class="card-body">
-                            <h5 class="card-title">Coverage</h5>
-                            <button id="button-add-coverage" type="button" class="btn btn-outline-primary">Add</button>
-                            <button id="button-del-coverage" type="button"
-                                class="btn btn-outline-primary">Delete</button>
+                            <h5 class="card-title">Image Scale [Meter]</h5>
+                            <input id="text-scale-meter" class="form-control mb-2" type="text" placeholder="Length in Meter">
+                            <div class="d-flex gap-2">
+                                <button id="button-select-scale" type="button" class="btn btn-outline-primary">Drag &
+                                    Set Scale</button>
+                                <button id="button-measure-scale" type="button" class="btn btn-outline-primary">Measure
+                                    Length</button>
+                            </div>
                         </div>
                     </div>
                     <div class="card">
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h4>Design Settings</h4>
+                        </div>
                         <div class="card-body">
-                            <h5 class="card-title">Design</h5>
                             <div class="mb-3">
                                 <label for="design-name" class="form-label">Name</label>
                                 <input type="text" class="form-control" id="design-name"
@@ -285,13 +300,14 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">Save Image</h5>
-                                <button id="button-image-download" type="button"
-                                    class="btn btn-outline-primary">Download
-                                    Image</button>
+                            <div class="mt-3 pt-3 border-top">
+                                <div class="d-grid gap-2">
+                                    <h5 class="card-title">Save Design to PNG File</h5>
+                                    <button id="button-image-download" type="button"
+                                        class="btn btn-outline-primary">
+                                        Download Design Image
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
