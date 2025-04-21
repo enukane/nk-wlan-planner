@@ -1,8 +1,18 @@
 var __canvas = document.getElementById("canvas-map");
-__ctx = __canvas.getContext("2d");
+var __ctx = __canvas.getContext("2d");
 
+// =============================================================================
+// Constants
+// =============================================================================
+const AP_SELECT_RANGE = 20 // px
+const AP_DELETE_RANGE = 20 //px
+const DEFAULT_STATUS_MSG = "Press Button to operate"
+const SHOULDER_WIDTH_M = 0.43 //[m]
+const COVERAGE_THRESHOLD_DB = -55
+const DEFAULT_AP_POWERDB = 17.0; // dBm
+const DESIGNS_LIST_KEY = "nk-wlan-planner_designs"
 
-var MapStatus = {
+const MapStatus = {
     NONE: 0,
     ADD_AP: 1,
     ADD_WALL: 2,
@@ -25,708 +35,61 @@ var MapStatus = {
     ADD_HORIZONTAL_WALL: 19,
     ADDING_HORIZONTAL_WALL: 20
 }
+
+const DBPOWER_TO_COLOR = [
+    //[-15, "red"],
+    //[-25, "red"],
+    [-25, "red"],
+    [-30, "orangered"],
+    [-35, "orange"],
+    [-40, "yellow"],
+    [-45, "chartreuse"],
+    [-50, "lime"],
+    [-55, "green"],
+    [-60, "cornflowerblue"],
+    [-65, "blue"],
+    [-70, "navy"],
+    [-75, "darkblue"],
+    [-80, "midnightblue"],
+];
+
+const ATTDB_TO_COLOR = [
+    [4, "saddlebrown"],
+    [7, "brown"],
+    [11, "darkred"],
+    [13, "purple"],
+    [31, "indigo"],
+]
+
+
+// =============================================================================
+// App state variables
+// =============================================================================
+
+// Current map status
 var __map_status = 0;
 
-const AP_SELECT_RANGE = 20 // px
-const AP_DELETE_RANGE = 20 //px
-const DEFAULT_STATUS_MSG = "Press Button to operate"
-const SHOULDER_WIDTH_M = 0.43 //[m]
-const COVERAGE_THRESHOLD_DB = -55
-
+// Working objects
 var __working_wall_coordinates = null;
-
 var __selecting_scale = null;
-
 var __ap_idx_selected = null;
 
+// Map configuration
 var background_image = new Image();
 var __map_file_name = background_image.src = "map.png";
 var __current_image_data_url = null;
-
 var __coverage_list = []
-
 var __frequency = 5180 * 1000 * 1000;
-var AntennaPatterns = {
-    FRONT0: {
-        base: "MistAP33_5120M_R0_phi90",
-        key: "FRONT0",
-        name: "8dBi Directional (MistAP33)",
-        peak_db: 0,
-        resolution: 10,
-        bias_map:  [
-            8, 8, 8,
-            5, 5, 5,
-            5, 5, 5,
-            5, 5, 0,
-            -3, -5, -2,
-            -3, -3, -5,
-            -5
-        ]
-    },
-    FRONT1: {
-        base: "C9130AXI_5GHz",
-        key: "FRONT1",
-        name: "5dBi Directional (C9130AXI)",
-        peak_db: 0,
-        resolution: 10,
-        bias_map: [
-            0, 0, 3,
-            3, 5, 3,
-            3, 2, 1,
-            0, -1, -2,
-            -3, -3, -5,
-            -5 -5, -7,
-            -8
-        ]
-    },
-    FRONT2: {
-        base: "EAP620HD_5.25GHz",
-        key: "FRONT2",
-        name: "5dBi Directional (EAP620HD)",
-        peak_db: 0,
-        resolution: 10,
-        bias_map: [
-            -9, -7.5, -7.5,
-            -5, -1, -1,
-            -1, -1, -1,
-            -1, -1, -3
-            -5, -7.5, -10,
-            -7.5, -7, -8,
-            -1, -1
-        ]
-    },
-    FRONT3: {
-        base: "WA6638_Radio1_5GHz",
-        key: "FRONT3",
-        name: "5dBi Directional (WA6638)",
-        peak_db: 0,
-        resolution: 10,
-        bias_map: [
-            -2.5, -2.5, -1.25
-            -4, -1, 0,
-            1, -2, -5
-            -10, -13, -10,
-            -12, -11, -11,
-            -12, -11, -11,
-            -11, -11
-        ]
-    },
-    ARUBA550: {
-        base: "ARUBA550_5.18GHz",
-        key: "ARUBA550",
-        name: "5dBi Directional (AP550)",
-        peak_db: 0,
-        resolution: 10,
-        bias_map: [
-            -10, -7, -4,
-            -2, 0, -1,
-            0, 1, 0,
-            -2, -4, -5
-            -7, -8, -9,
-            -10, -12, -13,
-            -22, -22
-        ]
-    },
-    AP460C: {
-        base: "Extreme_AP460C_RADIO1_5GHz",
-        key: "AP460C",
-        name: "3.5dBi AP460C",
-        peak_db: 0,
-        resolution: 10,
-        bias_map: [
-            0, 1, 1,
-            0, 0, 3,
-            3, 3, 2,
-            0, -3, -5,
-            -8, -8, -9,
-            -9, -9, -8,
-            -7.5, -7.5
-        ]
-    },
-    AE6761: {
-        base: "Huawe_AirEngine_6761-21_5Ghz_Vertical",
-        key: "AE6761",
-        name: "5.5 dBi AE6761-21",
-        peak_db: 5.5,
-        resolution: 10,
-        bias_map: [
-            -8, -7, -2,
-            0, -2, -3,
-            -3, -3, -3,
-            -5, -7, -10,
-            -15, -12, -17,
-            -15, -20, -16,
-            -17, -17
-        ]
-    },
-    STEEP0: {
-        base: "",
-        key: "STEEP0",
-        name: "0 dBi Directional (half-angle 60)",
-        peak_db: 0,
-        resolution: 10, bias_map: [
-        0, -0.2, -1,    // 0, 10, 20
-        -2.5, -6, -20,  // 30, 40, 50
-        -30, -40, -40,  // 60, 70, 80
-        -40, -35, -35,  // 90, 100, 120
-        -25, -25, -25,  // 120, 130, 140
-        -25, -25, -25,  // 150, 160, 170
-        -40             // 180
-    ]},
-    DIRPATCH0: {
-        base: "WLE-HG-DA",
-        key: "DIRPATCH0",
-        name: "9dBi Directional (WLE-HG-DA)",
-        peak_db: 9,
-        resolution: 10,
-        bias_map: [
-            -0, -1, -2,    // 0, 10, 20
-            -3, -5, -8,  // 30, 40, 50
-            -10, -12, -18,  // 60, 70, 80
-            -23, -30, -30,  // 90, 100, 120
-            -20, -30, -30,  // 120, 130, 140
-            -30, -25, -22,  // 150, 160, 170
-            -18             // 180
-        ],
-    },
-    DIRPATCH1: {
-        base: "CANT9103",
-        key: "DIRPATCH1",
-        name: "6dBi Directional (CANT9103)",
-        peak_db: 0, // included
-        resolution: 10,
-        bias_map: [
-            6, 6, 6, // 0, 10, 20
-            6, 3, 0, // 30, 40, 50
-            0, 0, -5, // 60, 70, 80
-            -10, -10, -10, // 90, 100, 110
-            -15, -8, -8, // 120, 130, 140
-            -10, -13, -15, // 150, 160, 170
-            -25
-        ]
-    },
-    DIRPATCH2: {
-        base: "ANT-4x4-5314",
-        key: "DIRPATCH2",
-        name: "14dBi Directional (ANT-4x4-5314)",
-        peak_db: 14,
-        resolution: 10,
-        bias_map: [
-            0, -2, -5, //0
-            -9, -20, -30, //30
-            -29, -28, -30, //60
-            -33, -37, -35, //90
-            -38, -37, -40, //120
-            -40, -40, -40, //150
-            -40, -40 //1808
-        ]
-    },
-    FAP431F:{
-        "base": "",
-        "key": "FAP431F",
-        "name": "FortiAP-431F",
-        "peak_db": 0,
-        "resolution": 10,
-        "bias_map": [
-          4.6,
-          4.74,
-          4.49,
-          4,
-          3.7,
-          3.48,
-          3.65,
-          4.06,
-          -0.07,
-          -2.23,
-          -3.43,
-          -6.27,
-          -3.37,
-          -1.18,
-          -4.34,
-          -5.17,
-          -5.49,
-          -6.76,
-          -7.06
-        ]
-    },
-    FAP431G: {
-      "base": "FAP-431G",
-      "key": "FAP431G",
-      "name": "fap431g",
-      "peak_db": 0,
-      "resolution": 10,
-      "bias_map": [
-        4.46,
-        5.5,
-        5.49,
-        7.67,
-        8.54,
-        7.08,
-        7.06,
-        6.65,
-        5.29,
-        3.85,
-        2.35,
-        -0.18,
-        -2.38,
-        -2.77,
-        -1.85,
-        -3.32,
-        -4.34,
-        -5.67,
-        -9.69
-      ]
-    },
-    WLX323: {
-      "base": "WLX323",
-      "key": "WLX323",
-      "name": "WLX323",
-      "peak_db": 0,
-      "resolution": 10,
-      "bias_map": [
-        -3.45,
-        -3.97,
-        -3.71,
-        -2.15,
-        -1.95,
-        -1,
-        -1.62,
-        -2.31,
-        -3.35,
-        -3.94,
-        -5.29,
-        -6.61,
-        -7.36,
-        -10.21,
-        -10.37,
-        -12.54,
-        -12.84,
-        -13.48,
-        -12.82
-      ]
-    },
-    EAP773: {
-  "base": "EAP773",
-  "key": "EAP773",
-  "name": "EAP773",
-  "peak_db": 0,
-  "resolution": 10,
-  "bias_map": [
-    -2.57,
-    -1.32,
-    -0.85,
-    -1.69,
-    -2.65,
-    -3.69,
-    -4.73,
-    -5.07,
-    -3.84,
-    -3.86,
-    -3.95,
-    -5.22,
-    -5.28,
-    -5.94,
-    -7.7,
-    -8.05,
-    -7.34,
-    -11.65,
-    -9
-  ]
-},
-  QXW1240: {
-  "base": "QXW1240",
-  "key": "QXW1240",
-  "name": "QXW1240",
-  "peak_db": 0,
-  "resolution": 10,
-  "bias_map": [
-    -2.27,
-    0.39,
-    0.13,
-    1.15,
-    1.97,
-    0.07,
-    -0.73,
-    -4.18,
-    -7.31,
-    -10.94,
-    -12.27,
-    -14.82,
-    -17.56,
-    -19.52,
-    -18.63,
-    -18.78,
-    -20.94,
-    -20.88,
-    -18.34
-  ]
-},
-    AE676122T:{
-        "base": "AE6761-22T",
-        "key": "AE676122T",
-        "name": "AE6761-22T",
-        "peak_db": 0,
-        "resolution": 10,
-        "bias_map": [
-          -6.39,
-          -6.4,
-          -4.8,
-          -3.01,
-          -2.05,
-          -0.62,
-          0.24,
-          -2.23,
-          -4.39,
-          -6.83,
-          -6.12,
-          -5.27,
-          -4.97,
-          -8.41,
-          -9.36,
-          -8.95,
-          -11.35,
-          -12.61,
-          -11.62
-        ]
-      },
-    WLX222: {
-        "base": "WLX222",
-        "key": "WLX222",
-        "name": "WLX222",
-        "peak_db": 0,
-        "resolution": 10,
-        "bias_map": [
-          -1.7,
-          -1.23,
-          0.01,
-          0.08,
-          -0.67,
-          0.08,
-          -1.84,
-          -4.46,
-          -7.04,
-          -10.32,
-          -11.73,
-          -15.43,
-          -16.24,
-          -15.02,
-          -21.94,
-          -19.37,
-          -20.99,
-          -20.12,
-          -22.2
-        ]
-      },
-    QXW1130:{
-        "base": "QX-W1130",
-        "key": "QXW1130",
-        "name": "QX-W1130",
-        "peak_db": 0,
-        "resolution": 10,
-        "bias_map": [
-          -3.67,
-          -2.24,
-          -0.6,
-          0.23,
-          1.83,
-          1.59,
-          1.44,
-          1.06,
-          -0.85,
-          -2.72,
-          -5.55,
-          -7.15,
-          -8.67,
-          -11.42,
-          -13.28,
-          -14.59,
-          -16.08,
-          -16.21,
-          -16.4
-        ]
-      },
-    MISTAP45:{
-        "base": "MistAP45",
-        "key": "MISTAP45",
-        "name": "MistAP45",
-        "peak_db": 0,
-        "resolution": 10,
-        "bias_map": [
-          0.43,
-          2.07,
-          2.77,
-          5.97,
-          6.86,
-          6.92,
-          7.54,
-          6.47,
-          4.52,
-          1.74,
-          0.01,
-          -0.17,
-          -1.91,
-          -5.3,
-          -5.74,
-          -8.24,
-          -8.18,
-          -9.97,
-          -11.11
-        ]
-      },
-    EAP650:{
-        "base": "EAP650",
-        "key": "EAP650",
-        "name": "EAP650",
-        "peak_db": 0,
-        "resolution": 10,
-        "bias_map": [
-          0.08,
-          -0.22,
-          -0.41,
-          -0.81,
-          -1.38,
-          -1.45,
-          -1.87,
-          -1.96,
-          -3.46,
-          -3.38,
-          -3.07,
-          -5.45,
-          -5.31,
-          -5.48,
-          -8.06,
-          -8.45,
-          -7.68,
-          -13.04,
-          -16.56
-        ]
-      },
-      EAP610Outdoor:{
-        "base": "EAP610Outdoor",
-        "key": "EAP610Outdoor",
-        "name": "EAP610Outdoor",
-        "peak_db": 0,
-        "resolution": 10,
-        "bias_map": [
-          -1.06,
-          -0.46,
-          -0.52,
-          -1.76,
-          -2.59,
-          -3.7,
-          -4.33,
-          -4.9,
-          -3.81,
-          -3.49,
-          -4.35,
-          -5.96,
-          -5.88,
-          -6.39,
-          -8.35,
-          -7.64,
-          -7,
-          -10.6,
-          -17.29
-        ]
-      },
-    RGAP880AR:{
-        "base": "RG-AP880-AR",
-        "key": "RGAP880AR",
-        "name": "RG-AP880-AR",
-        "peak_db": 0,
-        "resolution": 10,
-        "bias_map": [
-          0.72,
-          3.73,
-          4.27,
-          5.43,
-          5.35,
-          4.14,
-          2.75,
-          1.87,
-          0.2,
-          -2.23,
-          -5.18,
-          -7.51,
-          -9.32,
-          -8.92,
-          -13.38,
-          -11.54,
-          -13.23,
-          -17.71,
-          -13.15
-        ]
-      },
-    WAWAWA:{
-        "base": "WAWAWA",
-        "key": "WAWAWA",
-        "name": "WAWAWA",
-        "peak_db": 0,
-        "resolution": 10,
-        "bias_map": [
-          -8.45,
-          -5.47,
-          -3.85,
-          -2.85,
-          -0.68,
-          2.8,
-          1.47,
-          0.29,
-          -1.07,
-          -1.9,
-          -3.64,
-          -7.59,
-          -6.49,
-          -9.4,
-          -11.99,
-          -11.19,
-          -13.38,
-          -12.95,
-          -10.17
-        ]
-      },
-    U6ENT: {
-        "base": "U6Enterprise",
-        "key": "U6ENT",
-        "name": "U6Enterprise",
-        "peak_db": 0,
-        "resolution": 10,
-        "bias_map": [
-          7.69,
-          8.7,
-          10.02,
-          8.65,
-          9.79,
-          7.89,
-          7,
-          6.74,
-          5.16,
-          3.46,
-          1.69,
-          2.04,
-          1.18,
-          -2.79,
-          0.07,
-          -0.68,
-          -3.57,
-          -3.9,
-          -2.18
-        ]
-      },
-    C9136I: {
-      "base": "C9136I",
-      "key": "C9136I",
-      "name": "C9136I",
-      "peak_db": 0,
-      "resolution": 10,
-      "bias_map": [
-        4,
-        3.71,
-        4.23,
-        4.51,
-        4.28,
-        4.49,
-        5.1,
-        4.32,
-        3.62,
-        2.5,
-        1.91,
-        0.98,
-        0.68,
-        0.82,
-        -0.97,
-        -2,
-        -3.18,
-        -3.86,
-        -4
-      ]
-    },
-    CW9166I_XOR:{
-        "base": "CW9166I_XOR",
-        "key": "CW9166I_XOR",
-        "name": "CW9166I (5GHz XOR)",
-        "peak_db": 0,
-        "resolution": 10,
-        "bias_map": [
-          -13.59,
-          -10.16,
-          -7.97,
-          -4.88,
-          -4.66,
-          -1.44,
-          -0.2,
-          -0.38,
-          -2.09,
-          -5.05,
-          -8.38,
-          -11.93,
-          -14.13,
-          -16.03,
-          -18.01,
-          -17.75,
-          -16.88,
-          -15.62,
-          -15.27
-        ]
-      },
-      CW9166I_CLT: {
-        "base": "CW9166I_CLT",
-        "key": "CW9166I_CLT",
-        "name": "CW9166I (5GHz Client Serving)",
-        "peak_db": 0,
-        "resolution": 10,
-        "bias_map": [
-          -5.29,
-          -4.17,
-          -1.51,
-          -1.46,
-          -0.27,
-          -0.16,
-          -0.38,
-          0.11,
-          -2.03,
-          -2.29,
-          -3.12,
-          -3.78,
-          -5.83,
-          -5.66,
-          -6.96,
-          -6.98,
-          -9.6,
-          -8.09,
-          -9.86
-        ]
-    },
-    NSM2:{
-        "base": "NanoStationM2",
-        "key": "NSM2",
-        "name": "NanoStationM2",
-        "peak_db": 0,
-        "resolution": 10,
-        "bias_map": [
-          -0.19,
-          -1.19,
-          -5.31,
-          -24.86,
-          -15.72,
-          -12.92,
-          -13.92,
-          -16.91,
-          -19.96,
-          -24.91,
-          -23.22,
-          -23.12,
-          -21.79,
-          -21.52,
-          -21.74,
-          -23.07,
-          -20.59,
-          -17.59,
-          -16.13
-        ]
-      }
-}
-    
+
+// Scale and conversion
+var selected_length_px_on_image = 1300;
+var selected_length_meter = 60;
+var __px2meter = selected_length_meter / selected_length_px_on_image; // [m/px]
+
+
+// =============================================================================
+// App state variables
+// =============================================================================
 var appos_list = [
     { x: 176, y: 163, powerdb: 20.0 },
     { x: 537, y: 163, powerdb: 20.0 },
@@ -736,23 +99,6 @@ var appos_list = [
     { x: 112, y: 372, powerdb: 20.0, direction: { degree: 0, pattern: AntennaPatterns.DIRPATCH0 } },
 ];
 
-var attdb2color = [
-    [4, "saddlebrown"],
-    [7, "brown"],
-    [11, "darkred"],
-    [13, "purple"],
-    [31, "indigo"],
-]
-/*
- * drywall: 3
- * bookchelf: 2
- * exteriorglass: 3
- * wooddoor: 6
- * marble: 6
- * brick: 10
- * concrete 12
- * elevator shaft: 30
-*/
 var obstacles_list = [
     // horizontal
     /// upper room
@@ -788,6 +134,16 @@ var obstacles_list = [
     { start: { x: 1210, y: 39}, end: { x: 1210, y: 770}, attenuation: 12, material: "concrete"},
 ];
 
+/*
+ * drywall: 3
+ * bookchelf: 2
+ * exteriorglass: 3
+ * wooddoor: 6
+ * marble: 6
+ * brick: 10
+ * concrete 12
+ * elevator shaft: 30
+*/
 function wall_type_to_params(type_s) {
     attdb = 0
     switch (type_s) {
@@ -832,19 +188,14 @@ function get_obstacle_color_from_attdb(attdb) {
         return "black"
     }
 
-    for (idx in attdb2color) {
-        if (attdb2color[idx][0] > attdb) {
-            return attdb2color[idx][1]
+    for (idx in ATTDB_TO_COLOR) {
+        if (ATTDB_TO_COLOR[idx][0] > attdb) {
+            return ATTDB_TO_COLOR[idx][1]
         }
 
     }
 }
 
-var selected_length_px_on_image = 1300;
-var selected_length_meter = 60;
-var __px2meter = selected_length_meter / selected_length_px_on_image; // [m/px]
-
-var DEFAULT_AP_POWERDB = 17.0; // dBm
 
 function init_matrix(xlim, ylim) {
     var matrix = new Array(ylim);
@@ -1062,30 +413,14 @@ function calc_free_space_loss_db(freq_hz, dist_m) {
     return dB
 }
 
-var dBPower2colors = [
-    //[-15, "red"],
-    //[-25, "red"],
-    [-25, "red"],
-    [-30, "orangered"],
-    [-35, "orange"],
-    [-40, "yellow"],
-    [-45, "chartreuse"],
-    [-50, "lime"],
-    [-55, "green"],
-    [-60, "cornflowerblue"],
-    [-65, "blue"],
-    [-70, "navy"],
-    [-75, "darkblue"],
-    [-80, "midnightblue"],
-];
 
 function calc_color_for_powerdb(dBPower) {
     if (dBPower == null) {
         return "none";
     }
-    for (idx in dBPower2colors) {
-        if (dBPower2colors[idx][0] < dBPower) {
-            return dBPower2colors[idx][1];
+    for (idx in DBPOWER_TO_COLOR) {
+        if (DBPOWER_TO_COLOR[idx][0] < dBPower) {
+            return DBPOWER_TO_COLOR[idx][1];
         }
     }
 
@@ -1958,7 +1293,6 @@ function change_config(e) {
 }
 
 //Local Storage Design Management
-const DESIGNS_LIST_KEY = "nk-wlan-planner_designs"
 function getSavedDesigns() {
     const designsJSON = localStorage.getItem(DESIGNS_LIST_KEY);
     if (!designsJSON) {
@@ -2179,13 +1513,13 @@ for (const [key, pattern] of Object.entries(AntennaPatterns)) {
 }
 
 // color table
-for (const idx in dBPower2colors) {
-    let db2color = dBPower2colors[idx]
+for (const idx in DBPOWER_TO_COLOR) {
+    let db2color = DBPOWER_TO_COLOR[idx]
     let td = $('<td>').css("background", db2color[1]).css("opacity", 0.7).css("color", "white").text("> " + db2color[0])
     $("#tr-powerdb-colorbar").append(td)
 }
-for (const idx in attdb2color) {
-    let db2color = attdb2color[idx]
+for (const idx in ATTDB_TO_COLOR) {
+    let db2color = ATTDB_TO_COLOR[idx]
     let td = $('<td>').css("background", db2color[1]).css("color", "white").text(db2color[0] - 1)
     $("#tr-obstacles-attdb-colorbar").append(td)
 }
