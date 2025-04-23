@@ -7,187 +7,384 @@
     <title>nk-wlan-planner</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.3/font/bootstrap-icons.css">
+    <style>
+        body {
+            overflow: hidden;
+        }
+
+        .sidebar {
+            height: 100vh;
+            overflow-y: auto;
+            padding-bottom: 20px;
+        }
+
+        .map-area {
+            height: calc(100vh - 160px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #canvas-map {
+            border: 1px solid #dee2e6;
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .header-area {
+            height: 50px;
+            background-color: #f8f9fa;
+            padding: 8px 10px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .legend-area {
+            height: 60px;
+            #background-color: #f8f9fa;
+            background-color: #f0f0f0;
+            padding: 5px 10px;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .status-area {
+            height: 50px;
+            background-color: #f8f9fa;
+            padding: 8px 10px;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .nav-tabs .nav-link {
+            padding: 0.5rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .direction-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+        }
+
+        .empty-cell {
+            width: 100%;
+        }
+
+        .btn i {
+            margin-right: 5px;
+        }
+
+        .color-cell {
+            height: 30px;
+            text-align: center;
+            color: white;
+            padding: 5px;
+            font-weight: bold;
+        }
+
+        .sidebar .card {
+            margin-bottom: 0.5rem;
+        }
+
+        .sidebar .card-body {
+            padding: 0.75rem;
+        }
+
+        .sidebar .card-header {
+            padding: 0.5rem 0.75rem;
+        }
+
+        .sidebar h5 {
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .sidebar h6 {
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .sidebar .btn-group {
+            margin-bottom: 0.5rem;
+        }
+
+        .sidebar .form-select,
+        .sidebar .form-control {
+            font-size: 0.9rem;
+            padding: 0.25rem 0.5rem;
+        }
+
+        .sidebar .btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .legend-table {
+            margin-bottom: 0;
+        }
+        
+        .legend-table td {
+            padding: 2px 10px;
+            text-align: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        /* サイドバーヘッダーの調整 */
+        .sidebar-header {
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+    </style>
 </head>
 
 <body>
-    <div class="container">
-        <header class="d-flex flex-wrap justify-content-between py-3 mb-4 border-bottom">
-            <div>
-                <h1>nk-wlan-planner: Wi-Fi AP Planner</h1>
-            </div>
-            <div class="d-flex align-items-center">
-                <ul class="nav">
-                    <li class="nav-item">
-                        <a href="https://github.com/enukane/nk-wlan-planner" class="nav-link px-2 text-primary">
-                            <i class="bi bi-github"></i>GitHub</a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="./antenna-pattern.html" class="nav-link">
-                            <i class="bi bi-gear"></i>Antenna Pattern Converter
-                        </a></li>
-                </ul>
-            </div>
-        </header>
-
-        <canvas id="canvas-map" width="1280" height="800"></canvas>
-
-        <div class="row">
-            <label>Power [dBm]</label>
-        </div>
-        <div class="row">
-            <table class="table">
-                <tbody>
-                    <tr id="tr-powerdb-colorbar"></tr>
-                </tbody>
-            </table>
-        </div>
-        <div class="row">
-            <label>Attenuation [dBm]</label>
-        </div>
-        <div class="row">
-            <table class="table">
-                <tbody>
-                    <tr id="tr-obstacles-attdb-colorbar"></tr>
-                </tbody>
-            </table>
-        </div>
-        <div id="map-status" class="alert alert-primary mt-2" role="alert">
-            Press Button to operate
-        </div>
-
-    </div>
-    <div>
-        <div class="container">
-            <div class="row">
-                <div class="col">
-                    <div class="card">
-                        <div class="card-header">
-                            <h4>AP</h4>
-                        </div>
-                        <div class="card-body">
-                            <h5 class="card-title">Operations</h5>
-                            <div class="btn-group w-100">
-                                <button id="button-add-ap" type="button" class="btn btn-outline-primary toggle">Add
-                                    (a)</button>
-                                <button id="button-modify-ap" type="button"
-                                    class="btn btn-outline-success">Modify</button>
-                                <button id="button-del-ap" type="button" class="btn btn-outline-warning">Delete
-                                    (d)</button>
-                                <button id="button-clear-ap" type="button" class="btn btn-outline-danger">Clear</button>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <h5 class="card-title">Parameters</h5>
-                            <h6 class="dard-title">Tx Power</h6>
-                            <select id="ap-param-powerdb" class="form-select" aria-label="select ap power in dBm">
-                                <option value="10">10 dBm (10 mW)</option>
-                                <option value="14">14 dBm (25 mW)</option>
-                                <option value="17">17 dBm (50 mW)</option>
-                                <option value="20" selected>20 dBm (100 mW)</option>
-                                <option value="23">23 dBm (200 mW)</option>
-                                <option value="24">24 dBm (250 mW)</option>
-                                <option value="30">30 dBm (1 W)</option>
-                                <option value="40">40 dBm (10 W)</option>
-                            </select>
-                            <h6 class="dard-title">Antenna Pattern</h6>
-                            <select id="ap-param-antenna-type" class="form-select" aria-label="select ap power in dBm">
-                                <option value="0" selected>Omni-Directional</option>
-                            </select>
-                            <h6 class="card-title">Antenna Angle (right: 0, clockwise)</h6>
-                            <div class="row">
-                                <div class="row-md-4 mb-2">
-                                    <div class="input-group">
-                                        <input type="number" class="form-control" value="0" min="-180" max="180"
-                                            id="ap-param-antenna-angle">
-                                        <span class="input-group-text">degree</span>
-                                    </div>
-                                </div>
-                                <div class="row-md-4 mb-2">
-                                    <p class="text-muted small mb-1">Quick Direction Selection:</p>
-                                </div>
-                                <div class="row-md-4 mb-2">
-                                    <div class="direction-grid">
-                                        <button type="button" class="btn btn-outline-secondary direction-btn"
-                                            data-angle="135">
-                                            <span>↖️</span>
-                                        </button>
-                                        <button type="button" class="btn btn-outline-secondary direction-btn"
-                                            data-angle="90">
-                                            <span>⬆️</span>
-                                        </button>
-                                        <button type="button" class="btn btn-outline-secondary direction-btn"
-                                            data-angle="45">
-                                            <span>↗️</span>
-                                        </button>
-                                        <button type="button" class="btn btn-outline-secondary direction-btn"
-                                            data-angle="180">
-                                            <span>⬅️</span>
-                                        </button>
-                                        <div class="empty-cell"></div>
-                                        <button type="button" class="btn btn-outline-secondary direction-btn"
-                                            data-angle="0">
-                                            <span>➡️</span>
-                                        </button>
-                                        <button type="button" class="btn btn-outline-secondary direction-btn"
-                                            data-angle="-135">
-                                            <span>↙️</span>
-                                        </button>
-                                        <button type="button" class="btn btn-outline-secondary direction-btn"
-                                            data-angle="-90">
-                                            <span>⬇️</span>
-                                        </button>
-                                        <button type="button" class="btn btn-outline-secondary direction-btn"
-                                            data-angle="-45">
-                                            <span>↘️</span>
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="row-md-4 mb-2">
-                                    <button id="button-apply-ap-param" type="button" class="btn btn-outline-primary"
-                                        disabled>Apply</button>
-                                </div>
-                            </div>
+    <div class="container-fluid p-0">
+        <div class="row g-0">
+            <!-- Main Content Area (80%) -->
+            <div class="col-10">
+                <!-- Header with title and links -->
+                <div class="header-area">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="m-0">nk-wlan-planner: Wi-Fi AP Planner</h5>
+                        <div>
+                            <a href="./antenna-pattern.html" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-broadcast-pin"></i> Antenna Pattern Converter
+                            </a>
+                            <a href="https://github.com/enukane/nk-wlan-planner" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-github"></i> GitHub
+                            </a>
                         </div>
                     </div>
                 </div>
-                <div class="col">
-                    <div class="row card">
-                        <div class="card-header">
-                            <h4>Wall/Obstacles</h4>
+
+                <!-- Status Message Area -->
+                <div class="status-area">
+                    <div id="map-status" class="alert alert-primary py-1 m-0" role="alert">
+                        Press Button to operate
+                    </div>
+                </div>
+
+
+                <!-- Main Map Area -->
+                <div class="map-area">
+                    <div class="canvas-wrapper">
+                        <canvas id="canvas-map" width="1280" height="800"></canvas>
+                    </div>
+                </div>
+
+
+                <!-- Legend Area -->
+                <div class="legend-area">
+                    <div class="row">
+                        <div class="col-9">
+                            <small><i class="bi bi-broadcast-pin"></i> <strong>Power [dBm]</strong></small>
+                            <table class="table table-sm legend-table">
+                                <tbody>
+                                    <tr id="tr-powerdb-colorbar"></tr>
+                                </tbody>
+                            </table>
                         </div>
-                        <div class="card-body w-100">
-                            <h5 class="card-title">Operations</h5>
-                            <div class="card-text">
-                                <div class="d-flex flex-column gap-2">
-                                    <div class="btn-group w-100">
-                                        <button id="button-add-wall" type="button" class="btn btn-outline-primary">Add
-                                            Wall (w)</button>
-                                        <button id="button-add-square" type="button" class="btn btn-outline-primary">Add
-                                            Square Wall (s)</button>
+                        <div class="col-3">
+                            <small><i class="bi bi-bricks"></i> <strong>Attenuation [dB]</strong></small>
+                            <table class="table table-sm legend-table">
+                                <tbody>
+                                    <tr id="tr-obstacles-attdb-colorbar"></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar Controls (20%) -->
+            <div class="col-2 sidebar bg-light">
+                <!-- サイドバーヘッダー部分 -->
+                <div class="sidebar-header">
+                    <h5 class="m-0 text-center">Control Panel</h5>
+                </div>
+                
+                <!-- Tabbed Navigation -->
+                <ul class="nav nav-tabs mt-2" id="controlTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="ap-tab" data-bs-toggle="tab" data-bs-target="#ap-content"
+                            type="button" role="tab" aria-controls="ap-content" aria-selected="true">
+                            <i class="bi bi-router"></i> AP
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="wall-tab" data-bs-toggle="tab" data-bs-target="#wall-content"
+                            type="button" role="tab" aria-controls="wall-content" aria-selected="false">
+                            <i class="bi bi-bricks"></i> Wall
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="map-tab" data-bs-toggle="tab" data-bs-target="#map-content"
+                            type="button" role="tab" aria-controls="map-content" aria-selected="false">
+                            <i class="bi bi-map"></i> Map
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings-content"
+                            type="button" role="tab" aria-controls="settings-content" aria-selected="false">
+                            <i class="bi bi-gear"></i> Design
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content p-2" id="controlTabsContent">
+                    <!-- AP Tab -->
+                    <div class="tab-pane fade show active" id="ap-content" role="tabpanel" aria-labelledby="ap-tab">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0"><i class="bi bi-router"></i> Operations</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="btn-group w-100">
+                                    <button id="button-add-ap" type="button" class="btn btn-outline-primary toggle">
+                                        <i class="bi bi-plus-circle"></i> Add (a)
+                                    </button>
+                                    <button id="button-modify-ap" type="button" class="btn btn-outline-success">
+                                        <i class="bi bi-pencil"></i> Modify
+                                    </button>
+                                    <button id="button-del-ap" type="button" class="btn btn-outline-warning">
+                                        <i class="bi bi-trash"></i> Delete (d)
+                                    </button>
+                                    <button id="button-clear-ap" type="button" class="btn btn-outline-danger">
+                                        <i class="bi bi-x-circle"></i> Clear
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0"><i class="bi bi-sliders"></i> Parameters</h5>
+                            </div>
+                            <div class="card-body">
+                                <h6 class="card-title"><i class="bi bi-broadcast"></i> Tx Power</h6>
+                                <select id="ap-param-powerdb" class="form-select mb-2" aria-label="select ap power in dBm">
+                                    <option value="10">10 dBm (10 mW)</option>
+                                    <option value="14">14 dBm (25 mW)</option>
+                                    <option value="17">17 dBm (50 mW)</option>
+                                    <option value="20" selected>20 dBm (100 mW)</option>
+                                    <option value="23">23 dBm (200 mW)</option>
+                                    <option value="24">24 dBm (250 mW)</option>
+                                    <option value="30">30 dBm (1 W)</option>
+                                    <option value="40">40 dBm (10 W)</option>
+                                </select>
+
+                                <h6 class="card-title"><i class="bi bi-broadcast-pin"></i> Antenna Pattern</h6>
+                                <select id="ap-param-antenna-type" class="form-select mb-2" aria-label="select antenna pattern">
+                                    <option value="0" selected>Omni-Directional</option>
+                                </select>
+
+                                <h6 class="card-title"><i class="bi bi-arrow-clockwise"></i> Antenna Angle</h6>
+                                <div class="input-group mb-2">
+                                    <input type="number" class="form-control" value="0" min="-180" max="180"
+                                        id="ap-param-antenna-angle">
+                                    <span class="input-group-text">°</span>
+                                </div>
+
+                                <div class="direction-grid mb-2">
+                                    <button type="button" class="btn btn-outline-secondary direction-btn" data-angle="135">
+                                        <span>↖️</span>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary direction-btn" data-angle="90">
+                                        <span>⬆️</span>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary direction-btn" data-angle="45">
+                                        <span>↗️</span>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary direction-btn" data-angle="180">
+                                        <span>⬅️</span>
+                                    </button>
+                                    <div class="empty-cell"></div>
+                                    <button type="button" class="btn btn-outline-secondary direction-btn" data-angle="0">
+                                        <span>➡️</span>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary direction-btn" data-angle="-135">
+                                        <span>↙️</span>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary direction-btn" data-angle="-90">
+                                        <span>⬇️</span>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary direction-btn" data-angle="-45">
+                                        <span>↘️</span>
+                                    </button>
+                                </div>
+
+                                <button id="button-apply-ap-param" type="button" class="btn btn-primary w-100" disabled>
+                                    <i class="bi bi-check-circle"></i> Apply
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Wall Tab -->
+                    <div class="tab-pane fade" id="wall-content" role="tabpanel" aria-labelledby="wall-tab">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0"><i class="bi bi-bricks"></i> Operations</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-grid gap-2">
+                                    <div class="btn-group">
+                                        <button id="button-add-wall" type="button" class="btn btn-outline-primary">
+                                            <i class="bi bi-slash-lg"></i> Wall (w)
+                                        </button>
+                                        <button id="button-add-square" type="button" class="btn btn-outline-primary">
+                                            <i class="bi bi-square"></i> Square (s)
+                                        </button>
                                     </div>
 
-                                    <div class="btn-group w-100">
-                                        <button id="button-add-v-wall" type="button" class="btn btn-outline-primary">Add
-                                            Vertical Wall (v)</button>
-                                        <button id="button-add-h-wall" type="button" class="btn btn-outline-primary">Add
-                                            Horizontal Wall (t)</button>
-                                        <button id="button-add-human" type="button" class="btn btn-outline-primary">Add
-                                            Human Body (x)</button>
+                                    <div class="btn-group">
+                                        <button id="button-add-v-wall" type="button" class="btn btn-outline-primary">
+                                            <i class="bi bi-grip-vertical"></i> Vertical (v)
+                                        </button>
+                                        <button id="button-add-h-wall" type="button" class="btn btn-outline-primary">
+                                            <i class="bi bi-grip-horizontal"></i> Horizontal (t)
+                                        </button>
+                                        <button id="button-add-human" type="button" class="btn btn-outline-primary">
+                                            <i class="bi bi-person"></i> Human (x)
+                                        </button>
                                     </div>
 
-                                    <div class="btn-group w-100">
-                                        <button id="button-delete-wall" type="button"
-                                            class="btn btn-outline-warning">Delete Wall (f)</button>
-                                        <button id="button-clear-wall" type="button"
-                                            class="btn btn-outline-danger">Clear All Wall</button>
+                                    <div class="btn-group">
+                                        <button id="button-delete-wall" type="button" class="btn btn-outline-warning">
+                                            <i class="bi bi-trash"></i> Delete (f)
+                                        </button>
+                                        <button id="button-clear-wall" type="button" class="btn btn-outline-danger">
+                                            <i class="bi bi-x-circle"></i> Clear All
+                                        </button>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="card-body">
-                            <h5 class="card-title">Type</h5>
-                            <div class="card-text">
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0"><i class="bi bi-list"></i> Material Type</h5>
+                            </div>
+                            <div class="card-body">
                                 <select id="select-wall-type" class="form-select" aria-label="select wall type">
                                     <option value="drywall" selected>Dry Wall (3 dB)</option>
                                     <option value="bookshelf">Bookshelf (3 dB)</option>
@@ -200,130 +397,153 @@
                                 </select>
                             </div>
                         </div>
-                    </div>
-                    <div class="row card">
-                        <div class="card-header">
-                            <h4>Frequency</h4>
-                        </div>
-                        <div class="card-body">
-                            <h5 class="card-title">Displaying Band</h5>
-                            <select id="select-freq-type" class="form-select" aria-label="select frequency type">
-                                <option value="920000000">920MHz</option>
-                                <option value="2412000000">2.4GHz</option>
-                                <option value="4920000000">4.9GHz</option>
-                                <option value="5180000000" selected>5GHz (W52, U-NII-1)</option>
-                                <option value="5260000000">5GHz (W53, U-NII-2A)</option>
-                                <option value="5500000000">5GHz (W56, U-NII-2C)</option>
-                                <option value="5745000000">5GHz (W58, U-NII-3)</option>
-                                <option value="5955000000">6GHz (U-NII-5)</option>
-                                <option value="6435000000">6GHz (U-NII-6)</option>
-                                <option value="6435000000">6GHz (U-NII-7)</option>
-                                <option value="6895000000">6GHz (U-NII-8)</option>
-                                <option value="58320000000">60GHz</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="row card">
-                        <div class="card-header">
-                            <h4>Coverage</h4>
-                        </div>
-                        <div class="card-body">
-                            <h5 class="card-title">Operations</h5>
-                            <button id="button-add-coverage" type="button" class="btn btn-outline-primary">Add</button>
-                            <button id="button-del-coverage" type="button"
-                                class="btn btn-outline-danger">Delete</button>
-                        </div>
-                        <div class="card-body">
-                            <div id="coverage-status" class="alert alert-primary mt-2" role="alert">
-                                Coverage Evaluation:
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card">
-                        <div class="card-header">
-                            <h4>Map Image</h4>
-                        </div>
-                        <div class="card-body">
-                            <h5 class="card-title">Image Upload</h5>
-                            <input type="file" name="file" id="button-image-upload">
-                        </div>
-                        <div class="card-body">
-                            <h5 class="card-title">Image Scale [Meter]</h5>
-                            <input id="text-scale-meter" class="form-control mb-2" type="text" placeholder="Length in Meter">
-                            <div class="d-flex gap-2">
-                                <button id="button-select-scale" type="button" class="btn btn-outline-primary">Drag &
-                                    Set Scale</button>
-                                <button id="button-measure-scale" type="button" class="btn btn-outline-primary">Measure
-                                    Length</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card">
-                    </div>
-                    <div class="card">
-                        <div class="card-header">
-                            <h4>Design Settings</h4>
-                        </div>
-                        <div class="card-body">
-                            <div class="mb-3">
-                                <label for="design-name" class="form-label">Name</label>
-                                <input type="text" class="form-control" id="design-name"
-                                    placeholder="Enter Design Name">
-                            </div>
-                            <div class="d-grid gap-2 mb-3">
-                                <button id="button-save-design" type="button"
-                                    class="btn btn-outline-primary">Save</button>
-                            </div>
 
-                            <div class="mb-3">
-                                <label class="form-label">Saved Designs</label>
-                                <select id="designs-list" class="form-select mb-2">
-                                    <option value="" selected>Select a design to load</option>
-                                </select>
-                                <div class="d-flex gap-2">
-                                    <button id="button-load-design" type="button"
-                                        class="btn btn-outline-primary">Load</button>
-                                    <button id="button-delete-design" type="button"
-                                        class="btn btn-outline-danger">Delete</button>
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0"><i class="bi bi-broadcast-pin"></i> Coverage</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="btn-group w-100 mb-2">
+                                    <button id="button-add-coverage" type="button" class="btn btn-outline-primary">
+                                        <i class="bi bi-plus-circle"></i> Add
+                                    </button>
+                                    <button id="button-del-coverage" type="button" class="btn btn-outline-danger">
+                                        <i class="bi bi-trash"></i> Delete
+                                    </button>
+                                </div>
+                                <div id="coverage-status" class="alert alert-primary py-1 px-2" role="alert">
+                                    Coverage: N/A
                                 </div>
                             </div>
-                            <div class="mt-3 pt-3 border-top">
-                                <h6 class="card-subtitled mb-2 text-muted">File Operations</h6>
-                                <div class="d-grid gap-2">
-                                    <button id="button-download" type="button"
-                                        class="btn btn-outline-primary">Download</button>
-                                    <div class="input-group">
-                                        <input type="file" class="form-control" id="button-config-upload"
-                                            aria-label="Upload">
-                                        <button id="button-upload" type="button"
-                                            class="btn btn-outline-secondary">Upload</button>
+                        </div>
+                    </div>
+
+                    <!-- Map Tab -->
+                    <div class="tab-pane fade" id="map-content" role="tabpanel" aria-labelledby="map-tab">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0"><i class="bi bi-image"></i> Map Image</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-2">
+                                    <label class="form-label">Upload Map Image</label>
+                                    <input type="file" class="form-control" id="button-image-upload">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0"><i class="bi bi-rulers"></i> Scale</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-2">
+                                    <label class="form-label">Length [Meter]</label>
+                                    <input id="text-scale-meter" class="form-control" type="text" placeholder="Length in Meter">
+                                </div>
+                                <div class="btn-group w-100">
+                                    <button id="button-select-scale" type="button" class="btn btn-outline-primary">
+                                        <i class="bi bi-arrows-angle-expand"></i> Set Scale
+                                    </button>
+                                    <button id="button-measure-scale" type="button" class="btn btn-outline-primary">
+                                        <i class="bi bi-rulers"></i> Measure
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0"><i class="bi bi-broadcast"></i> Frequency</h5>
+                            </div>
+                            <div class="card-body">
+                                <select id="select-freq-type" class="form-select" aria-label="select frequency type">
+                                    <option value="920000000">920MHz</option>
+                                    <option value="2412000000">2.4GHz</option>
+                                    <option value="4920000000">4.9GHz</option>
+                                    <option value="5180000000" selected>5GHz (W52, U-NII-1)</option>
+                                    <option value="5260000000">5GHz (W53, U-NII-2A)</option>
+                                    <option value="5500000000">5GHz (W56, U-NII-2C)</option>
+                                    <option value="5745000000">5GHz (W58, U-NII-3)</option>
+                                    <option value="5955000000">6GHz (U-NII-5)</option>
+                                    <option value="6435000000">6GHz (U-NII-6)</option>
+                                    <option value="6435000000">6GHz (U-NII-7)</option>
+                                    <option value="6895000000">6GHz (U-NII-8)</option>
+                                    <option value="58320000000">60GHz</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Settings Tab -->
+                    <div class="tab-pane fade" id="settings-content" role="tabpanel" aria-labelledby="settings-tab">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0"><i class="bi bi-save"></i> Design</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-2">
+                                    <label for="design-name" class="form-label">Name</label>
+                                    <input type="text" class="form-control" id="design-name" placeholder="Enter Design Name">
+                                </div>
+                                <button id="button-save-design" type="button" class="btn btn-primary w-100 mb-3">
+                                    <i class="bi bi-save"></i> Save
+                                </button>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Saved Designs</label>
+                                    <select id="designs-list" class="form-select mb-2">
+                                        <option value="" selected>Select a design to load</option>
+                                    </select>
+                                    <div class="btn-group w-100">
+                                        <button id="button-load-design" type="button" class="btn btn-outline-primary">
+                                            <i class="bi bi-folder-symlink"></i> Load
+                                        </button>
+                                        <button id="button-delete-design" type="button" class="btn btn-outline-danger">
+                                            <i class="bi bi-trash"></i> Delete
+                                        </button>
                                     </div>
                                 </div>
                             </div>
-                            <div class="mt-3 pt-3 border-top">
-                                <div class="d-grid gap-2">
-                                    <h5 class="card-title">Save Design to PNG File</h5>
-                                    <button id="button-image-download" type="button"
-                                        class="btn btn-outline-primary">
-                                        Download Design Image
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0"><i class="bi bi-file-earmark"></i> Import/Export</h5>
+                            </div>
+                            <div class="card-body">
+                                <label class="form-label">Export Design</label>
+                                <button id="button-download" type="button" class="btn btn-outline-primary w-100 mb-2">
+                                    <i class="bi bi-download"></i> Export Design File
+                                </button>
+                                <button id="button-image-download" type="button" class="btn btn-outline-primary w-100">
+                                    <i class="bi bi-image"></i> Export Design Image
+                                </button>
+                               
+                                <label class="form-label">Import Design</label>
+                                <div class="input-group mb-2">
+                                    <input type="file" class="form-control" id="button-config-upload" aria-label="Upload">
+                                    <button id="button-upload" type="button" class="btn btn-outline-secondary">
+                                        <i class="bi bi-upload"></i>
                                     </button>
                                 </div>
+                                
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js"
-                integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2"
-                crossorigin="anonymous"></script>
-            <script src="https://code.jquery.com/jquery-3.6.0.js"
-                integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script>
-            <script src="shortcut.js"></script>
-            <script src="preset-antenna-patterns.js"></script>
-            <script src="main.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2"
+        crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.js"
+        integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script>
+    <script src="shortcut.js"></script>
+    <script src="preset-antenna-patterns.js"></script>
+    <script src="main.js"></script>
 </body>
 
 </html>
