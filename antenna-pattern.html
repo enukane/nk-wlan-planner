@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Antenna Pattern Converter</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container-fluid py-4">
+        <div class="row mb-4">
+            <div class="col">
+                <h1 class="text-center mb-3"><i class="bi bi-wifi"></i> Wi-Fi AP Antenna Pattern Converter</h1>
+                <p class="text-center text-muted">Convert antenna pattern image to radiation property in JSON format</p>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <!-- Canvas Section -->
+            <div class="col-lg-8">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body p-0">
+                        <canvas id="canvas-ant" width="800" height="600" class="w-100 h-auto" style="border-radius: 0.5rem;">
+                        </canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Controls Section -->
+            <div class="col-lg-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <!-- Image Controls -->
+                        <div class="mb-4">
+                            <h5 class="card-title d-flex align-items-center">
+                                <i class="bi bi-image me-2"></i> Load Image
+                            </h5>
+                            <div class="mb-3">
+                                <label for="button-load-img" class="form-label">Select Antenna Pattern Image</label>
+                                <input id="button-load-img" type="file" class="form-control" accept="image/*">
+                            </div>
+                            <button id="button-rotate" type="button" class="btn btn-outline-primary w-100 mb-3">
+                                <i class="bi bi-arrow-clockwise"></i> Rotate 90 Degree
+                            </button>
+                        </div>
+                        
+                        <!-- Scale Settings -->
+                        <div class="mb-4">
+                            <h5 class="card-title d-flex align-items-center">
+                                <i class="bi bi-graph-up me-2"></i> Scale Settings
+                            </h5>
+                            
+                            <div class="mb-3">
+                                <label for="text-center-db" class="form-label">dB at Center Point</label>
+                                <div class="input-group">
+                                    <input id="text-center-db" class="form-control" type="number" value="-35">
+                                    <span class="input-group-text">dB</span>
+                                </div>
+                                <button id="button-select-center" type="button" class="btn btn-primary w-100 mt-2">
+                                    <i class="bi bi-cursor"></i> Select Center Point
+                                </button>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="text-edge-db" class="form-label">dB at Edge Point</label>
+                                <div class="input-group">
+                                    <input id="text-edge-db" class="form-control" type="number" value="5">
+                                    <span class="input-group-text">dB</span>
+                                </div>
+                                <button id="button-select-edge" type="button" class="btn btn-primary w-100 mt-2">
+                                    <i class="bi bi-cursor"></i> Select Edge Point at 0 Degree
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Point Selection -->
+                        <div class="mb-4">
+                            <h5 class="card-title d-flex align-items-center">
+                                <i class="bi bi-geo-alt me-2"></i> Select Each Point
+                            </h5>
+                            <button id="button-start-point" type="button" class="btn btn-success w-100 mb-2">
+                                <i class="bi bi-play-fill"></i> Start Selecting Radiation Pattern for Each 10 Degree
+                            </button>
+                            <div class="d-flex gap-2 mb-2">
+                                <button id="button-undo-point" type="button" class="btn btn-warning flex-grow-1" disabled>
+                                    <i class="bi bi-arrow-counterclockwise"></i> Revert
+                                </button>
+                                <button id="button-reset-all" type="button" class="btn btn-danger flex-grow-1" disabled>
+                                    <i class="bi bi-trash"></i> Delete All
+                                </button>
+                            </div>
+                            <div class="alert alert-info mb-0" role="alert">
+                                <i class="bi bi-info-circle me-2"></i>
+                                Selected: <span id="point-counter" class="fw-bold">0</span> Points
+                            </div>
+                        </div>
+                        
+                        <!-- Results -->
+                        <div class="mb-4">
+                            <h5 class="card-title d-flex align-items-center">
+                                <i class="bi bi-file-earmark-text me-2"></i> Result
+                            </h5>
+                            <div class="mb-2">
+                                <label for="text-base-model" class="form-label">Base Model</label>
+                                <input id="text-base-model" class="form-control" type="text" placeholder="Example: Wi-Fi AP Model X">
+                            </div>
+                            <div class="mb-3">
+                                <label for="text-display-name" class="form-label">Display Name</label>
+                                <input id="text-display-name" class="form-control" type="text" placeholder="Example: Antenna Pattern 2023-01">
+                            </div>
+                            <div class="d-flex gap-2 mb-3">
+                                <button id="button-end-point" type="button" class="btn btn-primary flex-grow-1">
+                                    <i class="bi bi-check-circle"></i> Generate Radiation JSON
+                                </button>
+                                <button id="button-copy" type="button" class="btn btn-outline-primary flex-grow-1">
+                                    <i class="bi bi-clipboard"></i> Copy to Clipboard
+                                </button>
+                            </div>
+                            <textarea id="textarea-result" class="form-control font-monospace" rows="8" readonly placeholder="JSON data is displayed here"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+    <script>
+        // Improved and refactored JavaScript code
+        const Status = {
+            NONE: 0,
+            SELECTING_CENTER: 1,
+            SELECTING_EDGE: 2,
+            SELECTING_POINT: 3,
+        };
+
+        class AntennaPatternConverter {
+            constructor() {
+                this.status = Status.NONE;
+                this.baseImage = new Image();
+                this.rotationDeg = 0;
+                this.config = {
+                    center: null,
+                    edge: null,
+                };
+                this.currentDeg = 0;
+                this.selectedPoints = [];
+                
+                this.canvas = document.getElementById("canvas-ant");
+                this.ctx = this.canvas.getContext("2d");
+                
+                this.setupEventListeners();
+            }
+
+            setupEventListeners() {
+                $("#canvas-ant").click((e) => this.handleCanvasClick(e));
+                $("#button-load-img").on("change", (e) => this.handleImageChange(e));
+                $("#button-rotate").click(() => this.rotateImage());
+                $("#button-select-center").click(() => this.startSelectingCenter());
+                $("#button-select-edge").click(() => this.startSelectingEdge());
+                $("#button-start-point").click(() => this.startSelectingPoint());
+                $("#button-end-point").click(() => this.endSelectingPoint());
+                $("#button-copy").click(() => this.copyResult());
+                $("#button-undo-point").click(() => this.undoLastPoint());
+                $("#button-reset-all").click(() => this.resetAllPoints());
+            }
+
+            handleCanvasClick(e) {
+                const xy = this.getMouseCoordinate(e);
+              console.log(xy)
+                
+                switch (this.status) {
+                    case Status.SELECTING_CENTER:
+                        this.onSelectingCenter(xy);
+                        break;
+                    case Status.SELECTING_EDGE:
+                        this.onSelectingEdge(xy);
+                        break;
+                    case Status.SELECTING_POINT:
+                        this.onSelectingPoint(xy);
+                        break;
+                }
+                
+                this.redrawCanvas();
+            }
+
+            handleImageChange(e) {
+                const file = e.target.files[0];
+                if (!file.type.match('image/.*')) return;
+                
+                const reader = new FileReader();
+                reader.onload = () => {
+                    this.baseImage.src = reader.result;
+                    this.baseImage.onload = () => this.redrawCanvas();
+                };
+                reader.readAsDataURL(file);
+            }
+
+            rotateImage() {
+                this.rotationDeg = (this.rotationDeg + 90) % 360;
+                this.redrawCanvas();
+            }
+
+            startSelectingCenter() {
+                this.status = Status.SELECTING_CENTER;
+                this.showToast("Click center point", "info");
+            }
+
+            startSelectingEdge() {
+                this.status = Status.SELECTING_EDGE;
+                this.showToast("Click edge point at 0 degree", "info");
+            }
+
+            startSelectingPoint() {
+                this.status = Status.SELECTING_POINT;
+                this.currentDeg = 0;
+                this.selectedPoints = [];
+                this.updatePointCounter();
+                $("#button-undo-point, #button-reset-all").prop("disabled", false);
+                this.showToast("Starting to select each radiation pattern", "success");
+            }
+
+            endSelectingPoint() {
+                this.status = Status.NONE;
+                this.printResultToTextarea();
+                this.showToast("Generated result to JSON", "success");
+            }
+
+            onSelectingCenter(xy) {
+                const db = parseInt($("#text-center-db").val());
+                this.config.center = { db, xy };
+                this.status = Status.NONE;
+                this.showToast("Selected center point", "success");
+            }
+
+            onSelectingEdge(xy) {
+                const db = parseInt($("#text-edge-db").val());
+                xy.x = this.config.center.xy.x; // Align vertically with center
+                this.config.edge = { db, xy };
+                this.status = Status.NONE;
+                this.showToast("Selected edge point", "success");
+            }
+
+            onSelectingPoint(xy) {
+                const perpPoint = this.calculatePerpPoint(xy);
+                const db = this.calculateDbAtPoint(perpPoint);
+                perpPoint.db = db;
+                
+                this.selectedPoints.push(perpPoint);
+                this.updatePointCounter();
+                
+                this.currentDeg += 10;
+                if (this.currentDeg > 180) {
+                    this.status = Status.NONE;
+                    this.showToast("Selected radiation pattern point", "success");
+                }
+            }
+
+            calculatePerpPoint(xy) {
+                const deg = this.currentDeg;
+                const rad = this.deg2rad(deg);
+                const center = this.config.center.xy;
+                const edge = this.config.edge.xy;
+                
+                const currentEdge = {
+                    x: (edge.x - center.x) * Math.cos(rad) - (edge.y - center.y) * Math.sin(rad) + center.x,
+                    y: (edge.x - center.x) * Math.sin(rad) + (edge.y - center.y) * Math.cos(rad) + center.y
+                };
+                
+                return this.calculatePerpendicular(center, currentEdge, xy);
+            }
+
+            calculateDbAtPoint(point) {
+                const center = this.config.center;
+                const edge = this.config.edge;
+                const distance = this.calculateDistance(center.xy, point);
+                const fullDistance = this.calculateDistance(center.xy, edge.xy);
+                const fullDb = Math.abs(edge.db - center.db);
+                return (fullDb * (distance / fullDistance)) + center.db;
+            }
+
+            calculatePerpendicular(lineStart, lineEnd, point) {
+                const perpPoint = { x: 0, y: 0 };
+                
+                if (lineStart.x === lineEnd.x) { // Vertical line
+                    perpPoint.x = lineStart.x;
+                    perpPoint.y = point.y;
+                } else if (lineStart.y === lineEnd.y) { // Horizontal line
+                    perpPoint.x = point.x;
+                    perpPoint.y = lineStart.y;
+                } else { // Angled line
+                    const m1 = (lineEnd.y - lineStart.y) / (lineEnd.x - lineStart.x);
+                    const b1 = lineStart.y - (m1 * lineStart.x);
+                    const m2 = -1.0 / m1;
+                    const b2 = point.y - (m2 * point.x);
+                    
+                    perpPoint.x = (b2 - b1) / (m1 - m2);
+                    perpPoint.y = (b2 * m1 - b1 * m2) / (m1 - m2);
+                }
+                
+                return perpPoint;
+            }
+
+            calculateDistance(p1, p2) {
+                return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+            }
+
+            deg2rad(deg) {
+                return deg * (Math.PI / 180);
+            }
+
+            getMouseCoordinate(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                const scaleX = this.canvas.width / rect.width;
+                const scaleY = this.canvas.height / rect.height;
+                return {
+                    x: Math.round((e.clientX - rect.left) * scaleX),
+                    y: Math.round((e.clientY - rect.top) * scaleY)
+                };
+            }
+
+            redrawCanvas() {
+                const imgW = this.baseImage.width;
+                const imgH = this.baseImage.height;
+                const fitRateX = this.canvas.width / imgW;
+                const fitRateY = this.canvas.height / imgH;
+                const fitRate = Math.min(fitRateX, fitRateY);
+                
+                const canvasImgW = imgW * fitRate;
+                const canvasImgH = imgH * fitRate;
+                
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Draw background
+                this.ctx.fillStyle = "#f8f9fa";
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Draw image with rotation
+                this.ctx.save();
+                this.ctx.translate(canvasImgW / 2, canvasImgH / 2);
+                this.ctx.rotate(this.rotationDeg * (Math.PI / 180));
+                this.ctx.translate(-canvasImgW / 2, -canvasImgH / 2);
+                this.ctx.drawImage(this.baseImage, 0, 0, canvasImgW, canvasImgH);
+                this.ctx.restore();
+                
+                // Draw points and lines
+                if (this.config.center?.xy) {
+                    this.drawCircle(this.config.center.xy, 8, "#0d6efd", true);
+                }
+                if (this.config.edge?.xy) {
+                    this.drawCircle(this.config.edge.xy, 8, "#dc3545", true);
+                }
+                
+                this.drawAlignmentLines();
+                this.drawSelectedPoints();
+            }
+
+            drawCircle(center, radius, color, filled = false) {
+                if (!center) return;
+                
+                this.ctx.beginPath();
+                this.ctx.arc(center.x, center.y, radius, 0, 2 * Math.PI);
+                this.ctx.strokeStyle = color;
+                this.ctx.lineWidth = 2;
+                this.ctx.stroke();
+                
+                if (filled) {
+                    this.ctx.fillStyle = color;
+                    this.ctx.fill();
+                }
+            }
+
+            drawAlignmentLines() {
+                if (!this.config.center?.xy || !this.config.edge?.xy) return;
+                
+                const lineLen = this.calculateDistance(this.config.center.xy, this.config.edge.xy);
+                
+                for (let deg = 0; deg <= 180; deg += 10) {
+                    const rad = this.deg2rad(deg);
+                    const edgeX = this.config.center.xy.x + Math.sin(rad) * lineLen;
+                    const edgeY = this.config.center.xy.y - Math.cos(rad) * lineLen;
+                    
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(this.config.center.xy.x, this.config.center.xy.y);
+                    this.ctx.lineTo(edgeX, edgeY);
+                    //this.ctx.strokeStyle = "rgba(128, 128, 128, 0.5)";
+                    //this.ctx.lineWidth = 1;
+                    if (this.status === Status.SELECTING_POINT && deg === this.currentDeg) {
+                      this.ctx.strokeStyle = "rgba(255, 0, 0, 0.8)";
+                      this.ctx.lineWidth = 2;
+                    } else {
+                      this.ctx.strokeStyle = "rgba(128, 128, 128, 0.5)";
+                      this.ctx.lineWidth = 1;
+                    }
+                    this.ctx.stroke();
+                }
+            }
+
+            drawSelectedPoints() {
+                this.selectedPoints.forEach(point => {
+                    this.drawCircle(point, 6, "#198754", true);
+                });
+            }
+
+            updatePointCounter() {
+                $("#point-counter").text(this.selectedPoints.length);
+            }
+
+            undoLastPoint() {
+                if (this.selectedPoints.length > 0) {
+                    this.selectedPoints.pop();
+                    this.currentDeg = Math.max(0, this.currentDeg - 10);
+                    this.updatePointCounter();
+                    this.redrawCanvas();
+                    this.showToast("Reverted most recently selected point", "warning");
+                }
+            }
+
+            resetAllPoints() {
+                this.selectedPoints = [];
+                this.currentDeg = 0;
+                this.updatePointCounter();
+                this.redrawCanvas();
+                this.showToast("Deleted all point", "danger");
+            }
+
+            printResultToTextarea() {
+                const result = {
+                    base: $("#text-base-model").val(),
+                    key: "KEY",
+                    name: $("#text-display-name").val(),
+                    peak_db: 0,
+                    resolution: 10,
+                    bias_map: this.selectedPoints.map(point => Math.round(point.db * 100) / 100)
+                };
+                
+                $("#textarea-result").val(JSON.stringify(result, null, 2));
+            }
+
+            async copyResult() {
+                const text = $("#textarea-result").val();
+                if (!text) {
+                    this.showToast("Nothing to copy", "warning");
+                    return;
+                }
+                
+                try {
+                    await navigator.clipboard.writeText(text);
+                    this.showToast("Copied JSON to clipboard", "success");
+                } catch (err) {
+                    $("#textarea-result").select();
+                    document.execCommand("copy");
+                    this.showToast("Copied JSON to clipboard", "success");
+                }
+            }
+
+            showToast(message, type = "info") {
+                const toastContainer = document.getElementById("toast-container");
+                if (!toastContainer) {
+                    $("body").append('<div id="toast-container" class="position-fixed bottom-0 end-0 p-3" style="z-index: 11"></div>');
+                }
+                
+                const toastId = "toast-" + Date.now();
+                const toastHtml = `
+                    <div id="${toastId}" class="toast align-items-center text-white bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                        <div class="d-flex">
+                            <div class="toast-body">${message}</div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                    </div>
+                `;
+                
+                $("#toast-container").append(toastHtml);
+                const toast = new bootstrap.Toast(document.getElementById(toastId));
+                toast.show();
+                
+                setTimeout(() => {
+                    $("#" + toastId).remove();
+                }, 3000);
+            }
+        }
+
+        // Initialize the application
+        $(document).ready(() => {
+            new AntennaPatternConverter();
+        });
+    </script>
+</body>
+</html>
