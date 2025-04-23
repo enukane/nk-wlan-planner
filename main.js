@@ -815,11 +815,21 @@ function map_click_to_del_coverage(x, y) {
 }
 
 function get_map_mouse_coordinate(e) {
-    var mapOffset = document.querySelector("canvas").getBoundingClientRect();//$("#canvas-map").getBoundingClientRect();
-    mouseX = parseInt(e.clientX - mapOffset.left);
-    mouseY = parseInt(e.clientY - mapOffset.top);
+        var canvas = document.getElementById("canvas-map");
+        var canvasContainer = canvas.parentElement;
+        var rect = canvas.getBoundingClientRect();
+        var logicalWidth = canvas.width;
+        var logicalHeight = canvas.height;
 
-    return {x: mouseX, y: mouseY}
+        var relativeX = e.clientX - rect.left;
+        var relativeY = e.clientY - rect.top;
+
+        var normalizedX = relativeX / rect.width;
+        var normalizedY = relativeY / rect.height;
+
+        var mouseX = parseInt(normalizedX * logicalWidth);
+        var mouseY = parseInt(normalizedY * logicalHeight);
+        return {x: mouseX, y: mouseY};
 }
 
 function map_click(e) {
@@ -1470,6 +1480,19 @@ function download_image(e) {
     })
 }
 
+function resizeCanvas() {
+    const canvas = document.getElementById("canvas-map");
+    const container = document.querySelector('.map-area');
+    const aspectRatio = canvas.width / canvas.height;
+
+    const containerWidth = container.clientWidth;
+    const containerHeight = container.clientHeight;
+
+    canvas.style.width = Math.min(containerWidth, containerHeight * aspectRatio) + 'px';
+    canvas.style.height = Math.min(containerHeight, containerWidth / aspectRatio) + 'px';
+
+}
+
 $("#canvas-map").click(function (e) { map_click(e); })
 $("#canvas-map").mousedown(function (e) { map_mousedown(e); })
 $("#canvas-map").mouseup(function (e) { map_mouseup(e); })
@@ -1497,6 +1520,8 @@ $("#button-save-design").on('click', function(e) { saveDesign(); })
 $("#button-load-design").on('click', function(e) { loadDesign(); })
 $("#button-delete-design").on('click', function(e) { deleteDesign(); })
 $("#button-image-download").click(function(e) { download_image(e); })
+$(window).on('load', function(e) { resizeCanvas(); })
+$(window).on('resize', function(e) { resizeCanvas(); })
 
 $(document).ready(function() {
     updateDesignsList();
