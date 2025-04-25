@@ -97,7 +97,7 @@ var appos_list = [
     { x: 927, y: 163, powerdb: 20.0 },
     { x: 115, y: 540, powerdb: 20.0 },
     { x: 1018, y: 624, powerdb: 20.0 },
-    { x: 112, y: 372, powerdb: 20.0, direction: { degree: 0, pattern: AntennaPatterns.DIRPATCH0 } },
+    { x: 112, y: 372, powerdb: 20.0, direction: { degree: 0, pattern: AntennaPatternsList[0] } },
 ];
 
 var obstacles_list = [
@@ -636,8 +636,10 @@ function map_click_to_add_ap(x, y) {
     if (AntennaPatterns[antpattern_s] != undefined) {
         new_ap.direction = {
             degree: angle_deg,
-            pattern: AntennaPatterns[antpattern_s],
+            pattern: AntennaPatterns[antpattern_s]
         }
+    } else {
+        alert(`Error: antnna pattern ${antpattern_s} is invalid`)
     }
 
 
@@ -1534,10 +1536,25 @@ $(document).on("click", ".direction-btn", function() {
 })
 
 // add option of antenna
+const patternsByVendor = {};
 for (const [key, pattern] of Object.entries(AntennaPatterns)) {
-    let opt = $('<option>').val(pattern.key).text(pattern.name)
-    $("#ap-param-antenna-type").append(opt)
+    const vendor = pattern.vendor || "Unknown";
+    if (!patternsByVendor[vendor]) {
+        patternsByVendor[vendor] = [];
+    }
+    patternsByVendor[vendor].push({key, pattern});
 }
+
+Object.keys(patternsByVendor).sort().forEach(vendor => {
+    $("#ap-param-antenna-type").append(
+        $('<option>').attr('disabled', true).text(`----- ${vendor} -----`)
+    );
+    patternsByVendor[vendor].forEach(({key, pattern}) => {
+        $("#ap-param-antenna-type").append(
+            $('<option>').val(key).text(`${pattern.product} - ${pattern.name}`)
+        );
+    });
+});
 
 // color table
 for (const idx in DBPOWER_TO_COLOR) {

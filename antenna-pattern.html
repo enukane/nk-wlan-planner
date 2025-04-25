@@ -104,12 +104,16 @@
                                 <i class="bi bi-file-earmark-text me-2"></i> Result
                             </h5>
                             <div class="mb-2">
-                                <label for="text-base-model" class="form-label">Base Model</label>
-                                <input id="text-base-model" class="form-control" type="text" placeholder="Example: Wi-Fi AP Model X">
+                                <label for="text-vendor" class="form-label">Vendor</label>
+                                <input id="text-vendor" class="form-control" type="text" placeholder="Example: Vendor Name">
+                            </div>
+                            <div class="mb-2">
+                                <label for="text-product-model" class="form-label">Product Model</label>
+                                <input id="text-product-model" class="form-control" type="text" placeholder="Example: Wi-Fi AP Model X">
                             </div>
                             <div class="mb-3">
                                 <label for="text-display-name" class="form-label">Display Name</label>
-                                <input id="text-display-name" class="form-control" type="text" placeholder="Example: Antenna Pattern 2023-01">
+                                <input id="text-display-name" class="form-control" type="text" placeholder="Example: 5GHz Antenna1 Horizontal 2023-01">
                             </div>
                             <div class="d-flex gap-2 mb-3">
                                 <button id="button-end-point" type="button" class="btn btn-primary flex-grow-1">
@@ -430,8 +434,8 @@
 
             printResultToTextarea() {
                 const result = {
-                    base: $("#text-base-model").val(),
-                    key: "KEY",
+                    vendor: $("#text-vendor").val(),
+                    product: $("#text-product-model").val(),
                     name: $("#text-display-name").val(),
                     peak_db: 0,
                     resolution: 10,
