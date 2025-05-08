@@ -307,7 +307,21 @@ function calc_directional_power_db_of_ap_to_xy(ap, xp, yp) {
     if (dir_xy_deg > 180) {
         dir_xy_deg = 360 - dir_xy_deg
     }
-    dir_xy_deg = parseInt(dir_xy_deg / ap.direction.pattern.resolution)
+
+    if (ap.direction.pattern == null) {
+        return appowerdb
+    }
+
+    let resolution = 10;
+    if (ap.direction.pattern != null && ap.direction.pattern.resolution != null) {
+        resolution = ap.direction.pattern.resolution
+    }
+
+    dir_xy_deg = parseInt(dir_xy_deg / resolution)
+    if (ap.direction.pattern.bias_map == null) {
+        return appowerdb
+    }
+
     let biasdb = ap.direction.pattern.bias_map[dir_xy_deg]
     if (biasdb == null) {
         return appowerdb
