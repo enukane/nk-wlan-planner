@@ -1320,7 +1320,80 @@ function change_config(e) {
     reader.readAsText(file)
 }
 
-//Local Storage Design Management
+//IndexedDB Design Management
+const DB_NAME = "nk-wlan-planner";
+const DB_VERSION = 1;
+const DESIGNS_STORE = "designs";
+const DESIGNS_LIST_STORE = "designsList";
+
+let db = null;
+
+function initDB() {
+    return new Promise((resolve, reject) => {
+        if (db) {
+            resolve(db);
+            return; 
+        }
+
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        request.onerror = () =>  reject(request.error);
+        request.onsuccess = () => {
+            db = request.result;
+            resolve(db);
+        };
+
+        request.onupgradeneeded = (event) => {
+            db = event.target.result;
+            if (!db.objectStoreNames.contains(DESIGNS_STORE)) {
+                db.createObjectStore(DESIGNS_STORE, { keyPath: "name" });
+            }
+            if (!db.objectStoreNames.contains(DESIGNS_LIST_STORE)) {
+                const listStore = db.createObjectStore(DESIGNS_LIST_STORE, { keyPath: "id" });
+                listStore.createIndex("timestamp", "timestamp", { unique: false });
+            }
+            resolve(db);
+        };
+    });
+}
+
+function getFromDB(storeName, key) {
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([storeName], "readonly");
+        const store = transaction.objectStore(storeName);
+        const request = store.get(key);
+
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => resolve(request.result);
+    }
+    );
+}
+
+function putToDB(storeName, data) {
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([storeName], "readwrite");
+        const store = transaction.objectStore(storeName);
+        const request = store.put(data);
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => resolve(request.result);
+    });
+}
+
+async function getSavedDesignsFromDB() {
+    await initDB();
+    const designsListData = await getFromDB(DESIGNS_LIST_STORE, "list");
+    if (!designsListData || !designsListData.designs) {
+        return []
+    }
+
+    try {
+        return designsListData.designs;
+    } catch (e) {
+        console.error("Error parsing projects list from DB", e);
+        return [];
+    }
+}
+
+
 function getSavedDesigns() {
     const designsJSON = localStorage.getItem(DESIGNS_LIST_KEY);
     if (!designsJSON) {
@@ -1333,6 +1406,26 @@ function getSavedDesigns() {
         console.error("Error parsing projects list", e);
         return []
     }
+}
+
+async function updateDesignsListFromDB() {
+    const designs = await getSavedDesignsFromDB();
+    const select = $("#designs-list");
+    console.log("updating from DB", designs)
+    select.empty();
+    select.append($('<option value="" selected disabled>Select a design to load</option>'));
+
+    if (designs.length === 0) {
+        select.append($('<option disabled>No saved designs</option>'));
+        return;
+    }
+
+    designs.forEach((design, index) => {
+        const date = new Date(design.timestamp);
+        const dateStr = date.toLocaleDateString() + " " + date.toLocaleTimeString();
+        console.log(index, design.name, dateStr)
+        select.append($('<option>').val(index).text(design.name + " (" + dateStr + ")"));
+    });
 }
 
 function updateDesignsList() {
@@ -1354,7 +1447,53 @@ function updateDesignsList() {
     });
 }
 
-function saveDesign() {
+async function saveDesignToDB() {
+    const designName = $("#design-name").val().trim();
+    if (!designName) {
+        alert("Please enter a design name");
+        return;
+    }
+
+    let imageData = __current_image_data_url;
+    const config = {
+        ap: appos_list,
+        obstacles: obstacles_list,
+        px2meter: __px2meter,
+        coverage: __coverage_list,
+    };
+    const designData = {
+        name: designName,
+        config: config,
+        imageData: imageData,
+    };
+
+    await initDB();
+    let designs = await getSavedDesignsFromDB();
+
+    const existingIndex = designs.findIndex(d => d.name === designName);
+    if (existingIndex !== -1) {
+        designs.splice(existingIndex, 1);
+    }
+    designs.unshift({
+        name: designName,
+        timestamp: Date.now()
+    });
+    await putToDB(DESIGNS_LIST_STORE, { id: "list", designs: designs });
+
+    try {
+        await putToDB(DESIGNS_LIST_STORE, { id: "list", designs: designs });
+        await putToDB(DESIGNS_STORE, { name: designName, data: designData });
+        await updateDesignsListFromDB();
+    } catch (e) {
+        console.error("Error saving design to DB", e);
+        alert("Error saving design. Please try again.");
+        return;
+    }
+
+    update_status(`Design "${designName}" saved successfully`);
+}
+
+async function saveDesign() {
     const designName = $("#design-name").val().trim();
     if (!designName) {
         alert("Please enter a design name");
@@ -1402,9 +1541,62 @@ function saveDesign() {
 
     localStorage.setItem(DESIGNS_LIST_KEY, JSON.stringify(designs));
     localStorage.setItem(`nk-wlan-planner_design_${designName}`, JSON.stringify(designData));
-    updateDesignsList();
+    updateDesignsListFromDB();
     update_status(`Design "${designName}" saved successfully`);
 }
+
+async function loadDesignFromDB() {
+    const index = $("#designs-list").val();
+    if (index === null) {
+        alert("Please select a design to load");
+        return;
+    }
+    const designs = await getSavedDesignsFromDB();
+    const design = designs[index];
+    if (!design) {
+        alert("Design not found");
+        return;
+    }
+    const designName = design.name;
+    if (!designName) {
+        alert("Please select a design to load");
+        return;
+    }
+    await initDB();
+    const designRecord = await getFromDB(DESIGNS_STORE, designName);
+    if (!designRecord || !designRecord.data) {
+        alert("Design not found");
+        return;
+    }
+
+    try {
+        const designData = designRecord.data;
+        appos_list = designData.config.ap;
+        obstacles_list = designData.config.obstacles;
+        __px2meter = designData.config.px2meter;
+
+        if (designData.config.coverage) {
+            __coverage_list = designData.config.coverage;
+        }
+
+        if (designData.imageData) {
+            __current_image_data_url = background_image.src = designData.imageData;
+            __map_file_name = designName + ".png";
+            background_image.onload = function () {
+                redraw_map();
+            }
+        } else {
+            redraw_map();
+        }
+
+        $("#design-name").val(designName);
+        update_status(`Design "${designName}" loaded successfully`);
+    } catch (e) {
+        console.error("Error loading design data", e);
+        alert("Error loading project. The data might be corrupted");
+    }
+}
+
 
 function loadDesign() {
     const index = $("#designs-list").val();
@@ -1455,6 +1647,46 @@ function loadDesign() {
         console.error("Error loading design data", e);
         alert("Error loading project. The data might be corrupted");
     }
+}
+
+async function deleteDesignFromDB() {
+    const index = $("#designs-list").val();
+    if (index === null) {
+        alert("Please select a design to delete");
+        return;
+    }
+    let designs = await getSavedDesignsFromDB();
+    const design = designs[index];
+    if (!design) {  
+        alert("Design not found");
+        return;
+    }
+    const designName = design.name;
+    if (!designName) {
+        alert("Please select a design to delete");
+        return;
+    }
+
+    designs = designs.filter(d => d.name !== designName);
+
+    await initDB();
+    try {
+        await putToDB(DESIGNS_LIST_STORE, { id: "list", designs: designs });
+        const transaction = db.transaction([DESIGNS_STORE], "readwrite");
+        const store = transaction.objectStore(DESIGNS_STORE);
+        await new Promise((resolve, reject) => {
+            const request = store.delete(designName);
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => resolve();
+        });
+        
+        await updateDesignsListFromDB();
+    } catch (e) {
+        console.error("Error deleting design from DB", e);
+        alert("Error deleting design. Please try again.");
+        return;
+    }
+    update_status(`Design "${designName}" deleted successfully`);
 }
 
 function deleteDesign() {
@@ -1532,15 +1764,15 @@ $("#button-add-coverage").click(function (e) { add_coverage(e) })
 $("#button-del-coverage").click(function (e) { del_coverage(e) })
 $("#button-download").click(function (e) { download_clicked(e); })
 $("#button-config-upload").on('change', function(e) { change_config(e); })
-$("#button-save-design").on('click', function(e) { saveDesign(); })
-$("#button-load-design").on('click', function(e) { loadDesign(); })
-$("#button-delete-design").on('click', function(e) { deleteDesign(); })
+$("#button-save-design").on('click', function(e) { saveDesignToDB(); })
+$("#button-load-design").on('click', function(e) { loadDesignFromDB(); })
+$("#button-delete-design").on('click', function(e) { deleteDesignFromDB(); })
 $("#button-image-download").click(function(e) { download_image(e); })
 $(window).on('load', function(e) { resizeCanvas(); })
 $(window).on('resize', function(e) { resizeCanvas(); })
 
 $(document).ready(function() {
-    updateDesignsList();
+    updateDesignsListFromDB();
 })
 
 $(document).on("click", ".direction-btn", function() {
