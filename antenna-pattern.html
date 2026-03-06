@@ -123,7 +123,14 @@
                                     <i class="bi bi-clipboard"></i> Copy to Clipboard
                                 </button>
                             </div>
-                            <textarea id="textarea-result" class="form-control font-monospace" rows="8" readonly placeholder="JSON data is displayed here"></textarea>
+                            <textarea id="textarea-result" class="form-control font-monospace mb-3" rows="8" readonly placeholder="JSON data is displayed here"></textarea>
+
+                            <button id="button-create-issue" type="button" class="btn btn-dark w-100">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi me-2" viewBox="0 0 16 16">
+                                    <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+                                </svg>
+                                Create GitHub Issue
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -171,11 +178,13 @@
                 $("#button-copy").click(() => this.copyResult());
                 $("#button-undo-point").click(() => this.undoLastPoint());
                 $("#button-reset-all").click(() => this.resetAllPoints());
+
+                $("#button-create-issue").click(() => this.createGitHubIssue());
             }
 
             handleCanvasClick(e) {
                 const xy = this.getMouseCoordinate(e);
-              console.log(xy)
+                console.log(xy);
                 
                 switch (this.status) {
                     case Status.SELECTING_CENTER:
@@ -391,14 +400,12 @@
                     this.ctx.beginPath();
                     this.ctx.moveTo(this.config.center.xy.x, this.config.center.xy.y);
                     this.ctx.lineTo(edgeX, edgeY);
-                    //this.ctx.strokeStyle = "rgba(128, 128, 128, 0.5)";
-                    //this.ctx.lineWidth = 1;
                     if (this.status === Status.SELECTING_POINT && deg === this.currentDeg) {
-                      this.ctx.strokeStyle = "rgba(255, 0, 0, 0.8)";
-                      this.ctx.lineWidth = 2;
+                        this.ctx.strokeStyle = "rgba(255, 0, 0, 0.8)";
+                        this.ctx.lineWidth = 2;
                     } else {
-                      this.ctx.strokeStyle = "rgba(128, 128, 128, 0.5)";
-                      this.ctx.lineWidth = 1;
+                        this.ctx.strokeStyle = "rgba(128, 128, 128, 0.5)";
+                        this.ctx.lineWidth = 1;
                     }
                     this.ctx.stroke();
                 }
@@ -460,6 +467,33 @@
                     document.execCommand("copy");
                     this.showToast("Copied JSON to clipboard", "success");
                 }
+            }
+
+            createGitHubIssue() {
+                const vendor = $("#text-vendor").val().trim();
+                const product = $("#text-product-model").val().trim();
+                const body = $("#textarea-result").val().trim();
+
+                if (!vendor || !product) {
+                    this.showToast("Vendor and Product Model are required", "warning");
+                    return;
+                }
+                if (!body) {
+                    this.showToast("Please generate JSON first (click Generate Radiation JSON)", "warning");
+                    return;
+                }
+
+                const title = `add ${vendor} ${product}`;
+                const label = "add-ap-pattern";
+                const issueBody = "```json\n" + body + "\n```";
+
+                const url = new URL("https://github.com/enukane/nk-wlan-planner/issues/new");
+                url.searchParams.set("title", title);
+                url.searchParams.set("body", issueBody);
+                url.searchParams.set("labels", label);
+
+                window.open(url.toString(), "_blank");
+                this.showToast("Opening GitHub issue page...", "success");
             }
 
             showToast(message, type = "info") {
