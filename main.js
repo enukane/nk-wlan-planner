@@ -92,12 +92,12 @@ var __px2meter = selected_length_meter / selected_length_px_on_image; // [m/px]
 // App state variables
 // =============================================================================
 var appos_list = [
-    { x: 176, y: 163, powerdb: 20.0 },
-    { x: 537, y: 163, powerdb: 20.0 },
-    { x: 927, y: 163, powerdb: 20.0 },
-    { x: 115, y: 540, powerdb: 20.0 },
-    { x: 1018, y: 624, powerdb: 20.0 },
-    { x: 112, y: 372, powerdb: 20.0, direction: { degree: 0, pattern: AntennaPatternsList[0] } },
+    { x: 176, y: 163, name: "AP-1", powerdb: 20.0 },
+    { x: 537, y: 163, name: "AP-2", powerdb: 20.0 },
+    { x: 927, y: 163, name: "AP-3", powerdb: 20.0 },
+    { x: 115, y: 540, name: "AP-4", powerdb: 20.0 },
+    { x: 1018, y: 624, name: "AP-5", powerdb: 20.0 },
+    { x: 112, y: 372, name: "AP-6", powerdb: 20.0, direction: { degree: 0, pattern: AntennaPatternsList[0] } },
 ];
 
 var obstacles_list = [
@@ -596,6 +596,13 @@ function redraw_map() {
 
     draw_coverages(__coverage_list)
 
+    // draw AP markers and names
+    for (let key in appos_list) {
+        let ap = appos_list[key]
+        draw_text_centered(ap.x, ap.y - 10, 120, ap.name || "")
+        draw_text_centered(ap.x, ap.y + 5, 50, "▼")
+    }
+
     update_coverages_score(__coverage_list)
 }
 
@@ -638,8 +645,9 @@ function add_new_coverage(start, end) {
 /* event handler */
 function map_click_to_add_ap(x, y) {
     let new_ap = {
-        x: x, 
+        x: x,
         y: y,
+        name: $("#ap-param-name").val() || "",
         powerdb: 20.0, /* XXX */
         direction: null,
     }
@@ -698,6 +706,7 @@ function map_click_to_modify_ap(x, y) {
     let powerdb = ap.powerdb;
     let direction = ap.direction
 
+    $("#ap-param-name").val(ap.name || "")
     $("#ap-param-powerdb").val(powerdb)
     console.log("direction: ", direction)
     if (direction) {
@@ -1148,6 +1157,7 @@ function apply_ap(e) {
         return;
     }
 
+    appos_list[__ap_idx_selected].name = $("#ap-param-name").val() || ""
     appos_list[__ap_idx_selected].powerdb = parseInt($("#ap-param-powerdb").val())
     let pattern = $("#ap-param-antenna-type").val()
     if (pattern != 0) {
@@ -1303,6 +1313,9 @@ function change_config(e) {
         }
 
         appos_list = config_json.ap
+        for (let i in appos_list) {
+            if (appos_list[i].name === undefined) appos_list[i].name = ""
+        }
         obstacles_list = config_json.obstacles
         __px2meter = config_json.px2meter
 
@@ -1572,6 +1585,9 @@ async function loadDesignFromDB() {
     try {
         const designData = designRecord.data;
         appos_list = designData.config.ap;
+        for (let i in appos_list) {
+            if (appos_list[i].name === undefined) appos_list[i].name = ""
+        }
         obstacles_list = designData.config.obstacles;
         __px2meter = designData.config.px2meter;
 
@@ -1624,6 +1640,9 @@ function loadDesign() {
     try {
         const designData = JSON.parse(designDataJSON);
         appos_list = designData.config.ap;
+        for (let i in appos_list) {
+            if (appos_list[i].name === undefined) appos_list[i].name = ""
+        }
         obstacles_list = designData.config.obstacles;
         __px2meter = designData.config.px2meter;
 
