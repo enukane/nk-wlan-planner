@@ -677,6 +677,7 @@ function map_click_to_add_ap(x, y) {
     update_status("AP added")
 
     redraw_map()
+    refresh_ap_list()
 }
 
 function find_ap_in_range_from_coordination(x, y, range) {
@@ -697,13 +698,7 @@ function find_ap_in_range_from_coordination(x, y, range) {
     return found_idx
 }
 
-function map_click_to_modify_ap(x, y) {
-    let idx = find_ap_in_range_from_coordination(x, y, AP_SELECT_RANGE)
-    if (idx == null) {
-        update_status("AP out of range, done selecting");
-        return;
-    }
-
+function select_ap_by_index(idx) {
     let ap = appos_list[idx];
     draw_text_centered(ap.x, ap.y, 50, "▲")
 
@@ -721,8 +716,19 @@ function map_click_to_modify_ap(x, y) {
     }
 
     $("#button-apply-ap-param").prop("disabled", false)
+    refresh_ap_list(idx)
 
     update_status("modify AP parameters and press Apply button")
+}
+
+function map_click_to_modify_ap(x, y) {
+    let idx = find_ap_in_range_from_coordination(x, y, AP_SELECT_RANGE)
+    if (idx == null) {
+        update_status("AP out of range, done selecting");
+        return;
+    }
+
+    select_ap_by_index(idx)
     __map_status = MapStatus.NONE
 }
 
@@ -763,6 +769,7 @@ function map_click_to_del_ap(x, y) {
     update_status("AP deleted")
 
     redraw_map()
+    refresh_ap_list()
 }
 
 function map_click_to_add_human(x, y) {
@@ -1139,6 +1146,7 @@ function clear_ap(e) {
 
     appos_list = []
     redraw_map()
+    refresh_ap_list()
 }
 
 function add_ap(e) {
@@ -1180,6 +1188,7 @@ function apply_ap(e) {
     $("#button-apply-ap-param").prop("disabled", true)
 
     redraw_map()
+    refresh_ap_list()
 
     update_status("AP parameters updated")
 }
@@ -1329,6 +1338,7 @@ function change_config(e) {
             __map_file_name = config_json.map_image_file || "imported_map.png"
         }
         update_status("Loading config done")
+        refresh_ap_list()
 
         background_image.onload = function () {
             console.log("background image loaded")
@@ -1611,6 +1621,7 @@ async function loadDesignFromDB() {
         }
 
         $("#design-name").val(designName);
+        refresh_ap_list();
         update_status(`Design "${designName}" loaded successfully`);
     } catch (e) {
         console.error("Error loading design data", e);
@@ -1666,6 +1677,7 @@ function loadDesign() {
         }
 
         $("#design-name").val(designName);
+        refresh_ap_list();
         update_status(`Design "${designName}" loaded successfully`);
     } catch (e) {
         console.error("Error loading design data", e);
@@ -1844,6 +1856,37 @@ for (const idx in ATTDB_TO_COLOR) {
     $("#tr-obstacles-attdb-colorbar").append(td)
 }
 
+
+// AP List
+function refresh_ap_list(selectedIdx) {
+    let $list = $("#ap-list")
+    $list.empty()
+    let indices = Array.from(appos_list.keys())
+    indices.sort((a, b) => {
+        let nameA = appos_list[a].name || ""
+        let nameB = appos_list[b].name || ""
+        return nameA.localeCompare(nameB)
+    })
+    for (let i of indices) {
+        let ap = appos_list[i]
+        let label = (ap.name || "(no name)") + " — " + ap.powerdb + " dBm"
+        let $item = $('<a href="#" class="list-group-item list-group-item-action"></a>')
+            .text(label)
+            .attr("data-ap-idx", i)
+        if (selectedIdx != null && parseInt(selectedIdx) === i) {
+            $item.addClass("active")
+        }
+        $list.append($item)
+    }
+}
+
+$(document).on("click", "#ap-list .list-group-item", function(e) {
+    e.preventDefault()
+    let idx = $(this).data("ap-idx")
+    select_ap_by_index(idx)
+})
+
+refresh_ap_list()
 
 // shortcuts
 shortcut.add("a", function() {
