@@ -33,7 +33,9 @@ const MapStatus = {
     ADD_VERTICAL_WALL: 17,
     ADDING_VERTICAL_WALL: 18,
     ADD_HORIZONTAL_WALL: 19,
-    ADDING_HORIZONTAL_WALL: 20
+    ADDING_HORIZONTAL_WALL: 20,
+    ADD_CROSS_WALL: 21,
+    ADDING_CROSS_WALL: 22
 }
 
 const DBPOWER_TO_COLOR = [
@@ -943,6 +945,30 @@ function add_squared_wall_to_list(wall_coordinates, list)
     }
 }
 
+function add_cross_wall_to_list(wall_coordinates, list)
+{
+    let p0 = wall_coordinates.start
+    let p1 = wall_coordinates.end
+    let cx = (p0.x + p1.x) / 2
+    let cy = (p0.y + p1.y) / 2
+
+    // horizontal line through vertical center
+    // vertical line through horizontal center
+    let patterns = [
+        { start: {x: p0.x, y: cy}, end: {x: p1.x, y: cy} },
+        { start: {x: cx, y: p0.y}, end: {x: cx, y: p1.y} },
+    ]
+
+    for (let idx in patterns) {
+        let wall = new_wall()
+        wall.attenuation = wall_coordinates.attenuation
+        wall.material = wall_coordinates.material
+        wall.start = patterns[idx].start
+        wall.end = patterns[idx].end
+        list.push(wall)
+    }
+}
+
 function new_wall() {
     return {
         start: {
@@ -1005,6 +1031,7 @@ function map_mousedown(e) {
             __map_status = MapStatus.ADDING_WALL
             break;
         case MapStatus.ADD_SQUARED_WALL:
+        case MapStatus.ADD_CROSS_WALL:
             __working_wall_coordinates = new_wall();
             __working_wall_coordinates.start.x = xy.x
             __working_wall_coordinates.start.y = xy.y
@@ -1014,7 +1041,11 @@ function map_mousedown(e) {
             __working_wall_coordinates.attenuation = param.attenuation
             __working_wall_coordinates.material = param.type
 
-            __map_status = MapStatus.ADDING_SQUARED_WALL
+            if (__map_status == MapStatus.ADD_SQUARED_WALL) {
+                __map_status = MapStatus.ADDING_SQUARED_WALL
+            } else {
+                __map_status = MapStatus.ADDING_CROSS_WALL
+            }
             break
         case MapStatus.ADD_VERTICAL_WALL:
         case MapStatus.ADD_HORIZONTAL_WALL:
@@ -1078,6 +1109,15 @@ function map_mouseup(e) {
             __working_wall_coordinates.end.x = xy.x
             __working_wall_coordinates.end.y = xy.y
             add_squared_wall_to_list(__working_wall_coordinates, obstacles_list)
+            __working_wall_coordinates = null
+            __map_status = MapStatus.NONE
+            redraw_map()
+            update_status(DEFAULT_STATUS_MSG)
+            break
+        case MapStatus.ADDING_CROSS_WALL:
+            __working_wall_coordinates.end.x = xy.x
+            __working_wall_coordinates.end.y = xy.y
+            add_cross_wall_to_list(__working_wall_coordinates, obstacles_list)
             __working_wall_coordinates = null
             __map_status = MapStatus.NONE
             redraw_map()
@@ -1212,6 +1252,11 @@ function add_wall(e) {
 function add_squared_wall(e) {
     update_status("drat to draw square of wall")
     __map_status = MapStatus.ADD_SQUARED_WALL
+}
+
+function add_cross_wall(e) {
+    update_status("drag to draw cross wall")
+    __map_status = MapStatus.ADD_CROSS_WALL
 }
 
 function add_vertical_wall(e) {
@@ -1798,6 +1843,7 @@ $("#button-del-ap").click(function(e) { del_ap(e); })
 $("#button-apply-ap-param").click(function(e) { apply_ap(e); })
 $("#button-add-wall").click(function(e) { add_wall(e); })
 $("#button-add-square").click(function(e) {add_squared_wall(e); })
+$("#button-add-cross").click(function(e) {add_cross_wall(e); })
 $("#button-add-v-wall").click(function(e) { add_vertical_wall(e); })
 $("#button-add-h-wall").click(function(e) { add_horizontal_wall(e); })
 $("#button-delete-wall").click(function(e) { del_wall(e); })
@@ -1930,4 +1976,8 @@ shortcut.add("f", function() {
 
 shortcut.add("x", function() {
     add_human_body(null);
+})
+
+shortcut.add("c", function() {
+    add_cross_wall(null);
 })
