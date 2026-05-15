@@ -597,11 +597,16 @@ function redraw_map() {
     draw_coverages(__coverage_list)
 
     // draw AP markers and names
+    let prevFont = __ctx.font
+    __ctx.font = "10px Arial"
     for (let key in appos_list) {
         let ap = appos_list[key]
-        draw_text_centered(ap.x, ap.y - 10, 120, ap.name || "")
-        draw_text_centered(ap.x, ap.y + 5, 50, "▼")
+        __ctx.textAlign = "center"
+        __ctx.fillStyle = "black"
+        __ctx.fillText(ap.name || "", ap.x, ap.y - 8, 80)
+        __ctx.fillText("▼", ap.x, ap.y + 4, 30)
     }
+    __ctx.font = prevFont
 
     update_coverages_score(__coverage_list)
 }
