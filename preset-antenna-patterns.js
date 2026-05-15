@@ -546,7 +546,7 @@ const AntennaPatternsList = [
   },
   {
     vendor: "Juniper",
-    product: "Mist AP 47",
+    product: "Mist AP47",
     name: "5GHz Ant1 Composite Horizontal",
     peak_db: 0,
     resolution: 10,
