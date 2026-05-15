@@ -11,7 +11,7 @@ const AntennaPatternsList = [
     bias_map: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
   },
   {
-    vendor: "Juniper",
+    vendor: "HPE Mist",
     product: "Mist AP33",
     name: "5.12GHz R0 phi90 Horizontal",
     peak_db: 0,
@@ -101,7 +101,7 @@ const AntennaPatternsList = [
     ],
   },
   {
-    vendor: "Aruba",
+    vendor: "HPE Aruba",
     product: "AP550",
     name: "5.18GHz 5Dbi Horizontal",
     peak_db: 0,
@@ -251,7 +251,7 @@ const AntennaPatternsList = [
     ],
   },
   {
-    vendor: "Aruba",
+    vendor: "HPE Aruba",
     product: "ANT-4x4-5314",
     name: "14dBi Directional Horizontal",
     peak_db: 14,
@@ -379,7 +379,7 @@ const AntennaPatternsList = [
     ],
   },
   {
-    vendor: "Juniper",
+    vendor: "HPE Mist",
     product: "Mist AP45",
     name: "5GHz Horizontal",
     peak_db: 0,
@@ -545,7 +545,7 @@ const AntennaPatternsList = [
     ],
   },
   {
-    vendor: "Juniper",
+    vendor: "HPE Mist",
     product: "Mist AP47",
     name: "5GHz Ant1 Composite Horizontal",
     peak_db: 0,
@@ -556,7 +556,7 @@ const AntennaPatternsList = [
     ],
   },
   {
-    vendor: "Juniper",
+    vendor: "HPE Mist",
     product: "Mist AP47",
     name: "6GHz Ant1 Composite Horizontal",
     peak_db: 0,
@@ -1012,7 +1012,7 @@ const AntennaPatternsList = [
     ]
   },
   {
-    "vendor": "HPE",
+    "vendor": "HPE Aruba",
     "product": "AP725",
     "name": "5GHz XY Plane",
     "peak_db": 0,
@@ -1040,7 +1040,7 @@ const AntennaPatternsList = [
     ]
   },
   {
-    "vendor": "HPE",
+    "vendor": "HPE Aruba",
     "product": "AP725",
     "name": "5GHz XY Plane",
     "peak_db": 0,
@@ -1068,7 +1068,7 @@ const AntennaPatternsList = [
     ]
   },
   {
-    "vendor": "HPE",
+    "vendor": "HPE Aruba",
     "product": "AP735",
     "name": "5GHz XY Plane",
     "peak_db": 0,
@@ -1096,7 +1096,7 @@ const AntennaPatternsList = [
     ]
   },
   {
-    "vendor": "HPE",
+    "vendor": "HPE Aruba",
     "product": "AP735",
     "name": "6GHz XY Plane",
     "peak_db": 0,
