@@ -608,6 +608,17 @@ function redraw_map() {
     }
     __ctx.font = prevFont
 
+    // draw selection indicator for selected AP
+    if (__ap_idx_selected != null && appos_list[__ap_idx_selected]) {
+        let sel = appos_list[__ap_idx_selected]
+        __ctx.strokeStyle = "magenta"
+        __ctx.lineWidth = 2
+        __ctx.setLineDash([4, 3])
+        __ctx.strokeRect(sel.x - 18, sel.y - 18, 36, 36)
+        __ctx.setLineDash([])
+        __ctx.lineWidth = 1
+    }
+
     update_coverages_score(__coverage_list)
 }
 
@@ -700,7 +711,6 @@ function find_ap_in_range_from_coordination(x, y, range) {
 
 function select_ap_by_index(idx) {
     let ap = appos_list[idx];
-    draw_text_centered(ap.x, ap.y, 50, "▲")
 
     __ap_idx_selected = idx;
     let powerdb = ap.powerdb;
@@ -716,6 +726,7 @@ function select_ap_by_index(idx) {
     }
 
     $("#button-apply-ap-param").prop("disabled", false)
+    redraw_map()
     refresh_ap_list(idx)
 
     update_status("modify AP parameters and press Apply button")
