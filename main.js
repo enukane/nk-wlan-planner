@@ -1819,11 +1819,17 @@ Object.keys(patternsByVendor).sort().forEach(vendor => {
     $("#ap-param-antenna-type").append(
         $('<option>').attr('disabled', true).text(`----- ${vendor} -----`)
     );
-    patternsByVendor[vendor].forEach(({key, pattern}) => {
-        $("#ap-param-antenna-type").append(
-            $('<option>').val(key).text(`${pattern.product} - ${pattern.name}`)
-        );
-    });
+    patternsByVendor[vendor]
+        .sort((a, b) => {
+            const labelA = `${a.pattern.product} - ${a.pattern.name}`;
+            const labelB = `${b.pattern.product} - ${b.pattern.name}`;
+            return labelA.localeCompare(labelB);
+        })
+        .forEach(({key, pattern}) => {
+            $("#ap-param-antenna-type").append(
+                $('<option>').val(key).text(`${pattern.product} - ${pattern.name}`)
+            );
+        });
 });
 
 // color table
