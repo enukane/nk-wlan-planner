@@ -201,31 +201,14 @@ function get_obstacle_color_from_attdb(attdb) {
 
 
 function init_matrix(xlim, ylim) {
-    var matrix = new Array(ylim);
-    for (y = 0; y < ylim; y++) {
+    let matrix = new Array(ylim);
+    for (let y = 0; y < ylim; y++) {
         matrix[y] = new Array(xlim);
-    }
-    for (y = 0; y < matrix.length; y++) {
-        for (x = 0; x < matrix[y].length; x++) {
-            matrix[y][x] = null
+        for (let x = 0; x < xlim; x++) {
+            matrix[y][x] = null;
         }
     }
-    return matrix
-}
-
-function update_matrix_with_ap(matrix, powerdb, ap_x, ap_y, px2meter, freq_hz) {
-    /* calculate */
-    xbox = parseInt(ap_x / 5)
-    ybox = parseInt(ap_y / 5)
-    xboxcenter = xbox * 5 + 5 / 2
-    yboxcenter = ybox * 5 + 5 / 2
-    matrix[ybox][xbox] = powerdb
-}
-
-function calc_real_point(xbox, ybox) {
-    xPos = x * 5 + 5 / 2;
-    yPos = y * 5 + 5 / 2;
-    return [xPos, yPos];
+    return matrix;
 }
 
 function calc_distance_m(x0, y0, x1, y1, px2meter) {
@@ -243,8 +226,8 @@ function calc_distance_px_point2line(px, py, start_x, start_y, end_x, end_y) {
 }
 
 function is_line_crossing(a, b, c, d) {
-    s = (a.x - b.x) * (c.y - a.y) - (a.y - b.y) * (c.x - a.x);
-    t = (a.x - b.x) * (d.y - a.y) - (a.y - b.y) * (d.x - a.x);
+    let s = (a.x - b.x) * (c.y - a.y) - (a.y - b.y) * (c.x - a.x);
+    let t = (a.x - b.x) * (d.y - a.y) - (a.y - b.y) * (d.x - a.x);
     if (s * t > 0) {
         return false;
     }
@@ -257,6 +240,20 @@ function is_line_crossing(a, b, c, d) {
     return true;
 }
 
+// Fast version for hot path — takes raw coordinates, avoids object allocation
+function is_line_crossing_raw(ax, ay, bx, by, cx, cy, dx, dy) {
+    let abx = ax - bx, aby = ay - by;
+    let s = abx * (cy - ay) - aby * (cx - ax);
+    let t = abx * (dy - ay) - aby * (dx - ax);
+    if (s * t > 0) return false;
+
+    let cdx = cx - dx, cdy = cy - dy;
+    s = cdx * (ay - cy) - cdy * (ax - cx);
+    t = cdx * (by - cy) - cdy * (bx - cx);
+    if (s * t > 0) return false;
+    return true;
+}
+
 function is_point_in_rect(px, py, rect_x, rect_y, w, h) {
     if ((rect_x <= px && px <= (rect_x + w)) && (rect_y <= py && py <= (rect_y + h))) {
         return true
@@ -265,14 +262,51 @@ function is_point_in_rect(px, py, rect_x, rect_y, w, h) {
 }
 
 function calc_obstacles_attenuation_db(pos, apPos, obstacles) {
-    attdB = 0.0
-    for (let idx in obstacles) {
-        obstacle = obstacles[idx];
+    let attdB = 0.0
+    for (let idx = 0; idx < obstacles.length; idx++) {
+        let obstacle = obstacles[idx];
         if (is_line_crossing(pos, apPos, obstacle.start, obstacle.end)) {
             attdB += obstacle.attenuation
         }
     }
     return attdB;
+}
+
+// Fast version: raw coordinates + AABB pre-check (Tier 1c + Tier 3a)
+function calc_obstacles_attenuation_db_fast(posX, posY, apX, apY, obstacles, obstacleAABBs) {
+    let attdB = 0.0;
+    let lineMinX = posX < apX ? posX : apX;
+    let lineMaxX = posX > apX ? posX : apX;
+    let lineMinY = posY < apY ? posY : apY;
+    let lineMaxY = posY > apY ? posY : apY;
+
+    for (let idx = 0; idx < obstacles.length; idx++) {
+        let aabb = obstacleAABBs[idx];
+        // AABB broad-phase: skip if bounding boxes don't overlap
+        if (aabb[2] < lineMinX || aabb[0] > lineMaxX ||
+            aabb[3] < lineMinY || aabb[1] > lineMaxY) {
+            continue;
+        }
+        let o = obstacles[idx];
+        if (is_line_crossing_raw(posX, posY, apX, apY, o.start.x, o.start.y, o.end.x, o.end.y)) {
+            attdB += o.attenuation;
+        }
+    }
+    return attdB;
+}
+
+function precompute_obstacle_aabbs(obstacles) {
+    let aabbs = new Array(obstacles.length);
+    for (let i = 0; i < obstacles.length; i++) {
+        let o = obstacles[i];
+        aabbs[i] = [
+            o.start.x < o.end.x ? o.start.x : o.end.x, // minX
+            o.start.y < o.end.y ? o.start.y : o.end.y, // minY
+            o.start.x > o.end.x ? o.start.x : o.end.x, // maxX
+            o.start.y > o.end.y ? o.start.y : o.end.y, // maxY
+        ];
+    }
+    return aabbs;
 }
 
 function ary2coordinate(pos) {
@@ -343,23 +377,22 @@ function reset_coverage_eval(coverages) {
 }
 
 function get_ap_db_for_xy(ap, x, y, obstacles, px2meter) {
-    let cur_pos = calc_real_point(x, y)
+    let xPos = x * 5 + 2.5;
+    let yPos = y * 5 + 2.5;
 
-    ap_pos = [ap.x, ap.y]
-    /* detect crossing obstacles */
-    obstaclesAttenuationdB = calc_obstacles_attenuation_db(
-        ary2coordinate(cur_pos),
-        ary2coordinate(ap_pos),
+    let obstaclesAttenuationdB = calc_obstacles_attenuation_db(
+        {x: xPos, y: yPos},
+        {x: ap.x, y: ap.y},
         obstacles
     )
 
-    distM = calc_distance_m(cur_pos[0], cur_pos[1], ap_pos[0], ap_pos[1], px2meter)
+    let distM = calc_distance_m(xPos, yPos, ap.x, ap.y, px2meter)
 
-    powerdb_at_xy = 0
+    let powerdb_at_xy = 0
     if (ap.direction == null) {
         powerdb_at_xy = ap.powerdb - obstaclesAttenuationdB - calc_free_space_loss_db(__frequency, distM);
     } else {
-        powerdb_at_xy = calc_directional_power_db_of_ap_to_xy(ap, cur_pos[0], cur_pos[1]) - obstaclesAttenuationdB - calc_free_space_loss_db(__frequency, distM);
+        powerdb_at_xy = calc_directional_power_db_of_ap_to_xy(ap, xPos, yPos) - obstaclesAttenuationdB - calc_free_space_loss_db(__frequency, distM);
     }
 
     return powerdb_at_xy
@@ -368,46 +401,58 @@ function get_ap_db_for_xy(ap, x, y, obstacles, px2meter) {
 function update_matrix(matrix, appos_list, obstacles, px2meter, frequency) {
     reset_coverage_eval(__coverage_list);
 
-    for (y = 0; y < matrix.length; y++) {
-        for (x = 0; x < matrix[y].length; x++) {
-            cur_pos = calc_real_point(x, y)
+    // Pre-compute constants (Tier 1f)
+    let wave_length = 299792458 / frequency;
+    let fourPiOverWl = (4 * Math.PI) / wave_length;
 
-            for (ap_idx in appos_list) {
-                ap = appos_list[ap_idx]
-                powerdb_at_xy = get_ap_db_for_xy(ap, x, y, obstacles, px2meter)
-                //ap_pos = [appos_list[ap_idx].x, appos_list[ap_idx].y]
-                ///* detect crossing obstacles */
-                //obstaclesAttenuationdB = calc_obstacles_attenuation_db(
-                //    ary2coordinate(cur_pos),
-                //    ary2coordinate(ap_pos),
-                //    obstacles
-                //)
+    // Pre-compute obstacle AABBs (Tier 3a)
+    let obstacleAABBs = precompute_obstacle_aabbs(obstacles);
 
-                //distM = calc_distance_m(cur_pos[0], cur_pos[1], ap_pos[0], ap_pos[1], px2meter)
+    let apCount = appos_list.length;
+    let cvCount = __coverage_list.length;
 
-                //powerdb_at_xy = 0
-                //if (appos_list[ap_idx].direction == null) {
-                //    powerdb_at_xy = appos_list[ap_idx].powerdb - obstaclesAttenuationdB - calc_free_space_loss_db(__frequency, distM);
-                //} else {
-                //    powerdb_at_xy = calc_directional_power_db_of_ap_to_xy(appos_list[ap_idx], cur_pos[0], cur_pos[1]) - obstaclesAttenuationdB - calc_free_space_loss_db(__frequency, distM);
-                //}
+    for (let y = 0; y < matrix.length; y++) {
+        for (let x = 0; x < matrix[y].length; x++) {
+            let xPos = x * 5 + 2.5;
+            let yPos = y * 5 + 2.5;
+
+            for (let ap_idx = 0; ap_idx < apCount; ap_idx++) {
+                let ap = appos_list[ap_idx];
+
+                // Inline obstacle attenuation with AABB fast-path
+                let attdB = calc_obstacles_attenuation_db_fast(xPos, yPos, ap.x, ap.y, obstacles, obstacleAABBs);
+
+                // Inline distance calculation (avoid function call overhead)
+                let dx = (xPos - ap.x) * px2meter;
+                let dy = (yPos - ap.y) * px2meter;
+                let distM = Math.sqrt(dx * dx + dy * dy);
+
+                // Inline free-space loss (Tier 1f: pre-computed wave_length)
+                let fsldB = 20 * Math.log10(fourPiOverWl * distM);
+
+                let powerdb_at_xy;
+                if (ap.direction == null) {
+                    powerdb_at_xy = ap.powerdb - attdB - fsldB;
+                } else {
+                    powerdb_at_xy = calc_directional_power_db_of_ap_to_xy(ap, xPos, yPos) - attdB - fsldB;
+                }
+
                 if (matrix[y][x] == null || matrix[y][x] < powerdb_at_xy) {
-                    //console.log(apPosList[idx].powerdb, powerdb_at_xy)
-                    matrix[y][x] = powerdb_at_xy
+                    matrix[y][x] = powerdb_at_xy;
                 }
             }
 
             // coverage check
-            for (cv_idx in __coverage_list) {
-                let coverage = __coverage_list[cv_idx]
-                if (!is_point_in_rect(cur_pos[0], cur_pos[1], coverage.start.x, coverage.start.y, coverage.width, coverage.height)) {
-                    continue
+            for (let cv_idx = 0; cv_idx < cvCount; cv_idx++) {
+                let coverage = __coverage_list[cv_idx];
+                if (!is_point_in_rect(xPos, yPos, coverage.start.x, coverage.start.y, coverage.width, coverage.height)) {
+                    continue;
                 }
 
-                coverage.eval.count += 1
-                coverage.eval.sum += matrix[y][x]
+                coverage.eval.count += 1;
+                coverage.eval.sum += matrix[y][x];
                 if (matrix[y][x] < COVERAGE_THRESHOLD_DB) {
-                    coverage.eval.shortfall += 1
+                    coverage.eval.shortfall += 1;
                 }
             }
         }
@@ -444,12 +489,28 @@ function calc_color_for_powerdb(dBPower) {
     return "none"
 }
 
+// RGBA lookup for heatmap colors (alpha=128 ≈ 0.5 opacity)
+const DBPOWER_TO_RGBA = [
+    [-25, 255, 0, 0, 128],         // red
+    [-30, 255, 69, 0, 128],        // orangered
+    [-35, 255, 165, 0, 128],       // orange
+    [-40, 255, 255, 0, 128],       // yellow
+    [-45, 127, 255, 0, 128],       // chartreuse
+    [-50, 0, 255, 0, 128],         // lime
+    [-55, 0, 128, 0, 128],         // green
+    [-60, 100, 149, 237, 128],     // cornflowerblue
+    [-65, 0, 0, 255, 128],         // blue
+    [-70, 0, 0, 128, 128],         // navy
+    [-75, 0, 0, 139, 128],         // darkblue
+    [-80, 25, 25, 112, 128],       // midnightblue
+];
+
 function draw_xybox_in_color(xbox, ybox, color) {
     if (color == "none") {
         return;
     }
-    x_0 = xbox * 5
-    y_0 = ybox * 5
+    let x_0 = xbox * 5
+    let y_0 = ybox * 5
 
     __ctx.fillStyle = color
     __ctx.globalAlpha = 0.5
@@ -458,18 +519,51 @@ function draw_xybox_in_color(xbox, ybox, color) {
 }
 
 function draw_matrix(matrix) {
-    //for (y in matrix) {
-    for (y = 0; y < matrix.length; y++) {
-        //for (x in matrix[y]) {
-        for (x = 0; x < matrix[y].length; x++) {
-            dBPower = matrix[y][x];
-            color = calc_color_for_powerdb(dBPower)
-            //console.log(x, y, color)
-            draw_xybox_in_color(x, y, color)
+    let canvas = document.getElementById("canvas-map");
+    let canvasW = canvas.width;
+    let canvasH = canvas.height;
+    let imageData = __ctx.getImageData(0, 0, canvasW, canvasH);
+    let data = imageData.data;
+    let rgbaLen = DBPOWER_TO_RGBA.length;
 
+    for (let y = 0; y < matrix.length; y++) {
+        let y0 = y * 5;
+        for (let x = 0; x < matrix[y].length; x++) {
+            let dBPower = matrix[y][x];
+            if (dBPower == null) continue;
+
+            // Find matching RGBA
+            let r = -1, g = -1, b = -1, a = -1;
+            for (let ci = 0; ci < rgbaLen; ci++) {
+                if (DBPOWER_TO_RGBA[ci][0] < dBPower) {
+                    r = DBPOWER_TO_RGBA[ci][1];
+                    g = DBPOWER_TO_RGBA[ci][2];
+                    b = DBPOWER_TO_RGBA[ci][3];
+                    a = DBPOWER_TO_RGBA[ci][4];
+                    break;
+                }
+            }
+            if (r < 0) continue; // "none" — no color
+
+            let x0 = x * 5;
+            let alpha = a / 255;
+            let invAlpha = 1 - alpha;
+
+            // Fill the 5x5 block with alpha blending
+            for (let dy = 0; dy < 5; dy++) {
+                let rowStart = ((y0 + dy) * canvasW + x0) * 4;
+                for (let dx = 0; dx < 5; dx++) {
+                    let off = rowStart + dx * 4;
+                    data[off]     = data[off]     * invAlpha + r * alpha | 0;
+                    data[off + 1] = data[off + 1] * invAlpha + g * alpha | 0;
+                    data[off + 2] = data[off + 2] * invAlpha + b * alpha | 0;
+                    data[off + 3] = 255;
+                }
+            }
         }
     }
 
+    __ctx.putImageData(imageData, 0, 0);
 }
 
 function draw_obstacles(obstacles) {
@@ -582,12 +676,7 @@ function redraw_map() {
     console.log(xbox_max, ybo_max);
 
     matrix = init_matrix(xbox_max, ybo_max);
-    //console.log("inited", matrix)
 
-    // fill ap
-    for (key in appos_list) {
-        update_matrix_with_ap(matrix, DEFAULT_AP_POWERDB, appos_list[key].x, appos_list[key].y, __px2meter, __frequency)
-    }
     update_matrix(matrix, appos_list, obstacles_list, __px2meter, __frequency)
 
     draw_matrix(matrix)
